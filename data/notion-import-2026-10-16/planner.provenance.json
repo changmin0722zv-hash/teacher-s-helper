@@ -1,0 +1,428 @@
+[
+  {
+    "lesson_id": "d26cfa4c-5f56-5ec4-9754-748543c9fd47",
+    "source_record": 1,
+    "grade": 6,
+    "classroom": "1"
+  },
+  {
+    "lesson_id": "c5860fb9-2d58-50a6-8ebc-5e33a7f539ee",
+    "source_record": 1,
+    "grade": 6,
+    "classroom": "2"
+  },
+  {
+    "lesson_id": "724eda9f-a41a-5ae4-8da2-45a96e234dca",
+    "source_record": 2,
+    "grade": 3,
+    "classroom": "2"
+  },
+  {
+    "lesson_id": "a567075a-baa0-598c-8dfe-0839478fe680",
+    "source_record": 2,
+    "grade": 3,
+    "classroom": "3"
+  },
+  {
+    "lesson_id": "1526ee32-bbaa-5a59-8195-6cad5f11258b",
+    "source_record": 2,
+    "grade": 6,
+    "classroom": "1"
+  },
+  {
+    "lesson_id": "9adea7fc-6412-5c0c-9cb6-f3ea64cc6e38",
+    "source_record": 2,
+    "grade": 6,
+    "classroom": "2"
+  },
+  {
+    "lesson_id": "376d71dc-5370-5d26-8322-8998a20f09d7",
+    "source_record": 3,
+    "grade": 3,
+    "classroom": "1"
+  },
+  {
+    "lesson_id": "423c50e1-7405-52d5-9545-71db076d98c0",
+    "source_record": 3,
+    "grade": 3,
+    "classroom": "4"
+  },
+  {
+    "lesson_id": "90e450de-d891-5694-af13-e155f4247547",
+    "source_record": 3,
+    "grade": 3,
+    "classroom": "5"
+  },
+  {
+    "lesson_id": "fc063cb0-38af-5800-9d81-22ac6bb9b42a",
+    "source_record": 4,
+    "grade": 3,
+    "classroom": "3"
+  },
+  {
+    "lesson_id": "8d41f4d8-15ea-55ee-b5db-35433ec09bdd",
+    "source_record": 5,
+    "grade": 6,
+    "classroom": "1"
+  },
+  {
+    "lesson_id": "8454a266-2b47-59fa-861d-1f642637ba12",
+    "source_record": 5,
+    "grade": 6,
+    "classroom": "2"
+  },
+  {
+    "lesson_id": "6dab0fc4-a0c3-5ca4-b55e-ef602103d941",
+    "source_record": 6,
+    "grade": 3,
+    "classroom": "1"
+  },
+  {
+    "lesson_id": "fc656c86-adbb-5a06-813e-01a5a5de9c88",
+    "source_record": 6,
+    "grade": 3,
+    "classroom": "2"
+  },
+  {
+    "lesson_id": "22db05b5-9f9b-5376-8ca2-1327f3c3170a",
+    "source_record": 7,
+    "grade": 3,
+    "classroom": "4"
+  },
+  {
+    "lesson_id": "26bf8f9b-e1ff-524a-9310-ba9d7a376c29",
+    "source_record": 7,
+    "grade": 3,
+    "classroom": "5"
+  },
+  {
+    "lesson_id": "39b0a000-267f-59b5-bd1b-1eb575480bff",
+    "source_record": 8,
+    "grade": 3,
+    "classroom": "2"
+  },
+  {
+    "lesson_id": "f0086dbe-e2fd-59d5-bb4d-85676b5e2d70",
+    "source_record": 8,
+    "grade": 3,
+    "classroom": "3"
+  },
+  {
+    "lesson_id": "cd4eab61-31dc-52de-9a3e-c15be3af4df1",
+    "source_record": 9,
+    "grade": 6,
+    "classroom": "1"
+  },
+  {
+    "lesson_id": "dd16cb70-fcd0-5225-976b-7cf4d4f651ee",
+    "source_record": 9,
+    "grade": 6,
+    "classroom": "2"
+  },
+  {
+    "lesson_id": "083b431c-fa93-5912-8c30-ddc81bfeaf8a",
+    "source_record": 10,
+    "grade": 3,
+    "classroom": "1"
+  },
+  {
+    "lesson_id": "e47b1151-2d71-5428-a230-2d8725bb16a9",
+    "source_record": 10,
+    "grade": 3,
+    "classroom": "4"
+  },
+  {
+    "lesson_id": "8e793129-5939-5c77-a1d3-6b37f7640e3b",
+    "source_record": 10,
+    "grade": 3,
+    "classroom": "5"
+  },
+  {
+    "lesson_id": "cf010f4a-76a2-5cdc-9c83-d933f73db1be",
+    "source_record": 11,
+    "grade": 3,
+    "classroom": "3"
+  },
+  {
+    "lesson_id": "c6d85ec8-d257-5d30-baa1-09801b396696",
+    "source_record": 12,
+    "grade": 6,
+    "classroom": "1"
+  },
+  {
+    "lesson_id": "020e8ec8-b924-5470-be77-e4af9dd4848f",
+    "source_record": 12,
+    "grade": 6,
+    "classroom": "2"
+  },
+  {
+    "lesson_id": "fab14f98-0c85-5178-86e8-6951354f0a75",
+    "source_record": 13,
+    "grade": 3,
+    "classroom": "1"
+  },
+  {
+    "lesson_id": "deeb061b-db9c-58eb-8843-b7d62f41727f",
+    "source_record": 13,
+    "grade": 3,
+    "classroom": "2"
+  },
+  {
+    "lesson_id": "15991426-7290-5225-80e8-2b0f98d18a81",
+    "source_record": 14,
+    "grade": 3,
+    "classroom": "4"
+  },
+  {
+    "lesson_id": "08a239c9-6f20-53db-bea7-7eb341b138fb",
+    "source_record": 14,
+    "grade": 3,
+    "classroom": "5"
+  },
+  {
+    "lesson_id": "994a7b7a-6afe-56fa-858b-9e48f2c65a9c",
+    "source_record": 15,
+    "grade": 3,
+    "classroom": "2"
+  },
+  {
+    "lesson_id": "0efdb67e-465f-5c4b-9332-25dead19bd3c",
+    "source_record": 15,
+    "grade": 3,
+    "classroom": "3"
+  },
+  {
+    "lesson_id": "764d09da-4fac-5740-acff-2824a0e39cfb",
+    "source_record": 16,
+    "grade": 6,
+    "classroom": "1"
+  },
+  {
+    "lesson_id": "fe7b9456-6d97-57bb-9d35-9917c9c848d4",
+    "source_record": 16,
+    "grade": 6,
+    "classroom": "2"
+  },
+  {
+    "lesson_id": "d827cbff-37d5-5d39-9502-fca9bd046607",
+    "source_record": 17,
+    "grade": 3,
+    "classroom": "1"
+  },
+  {
+    "lesson_id": "ca0d016d-0cdb-5172-b501-edb88334b3cf",
+    "source_record": 17,
+    "grade": 3,
+    "classroom": "4"
+  },
+  {
+    "lesson_id": "56bc8776-ff3c-531c-a6f0-3344acff102e",
+    "source_record": 17,
+    "grade": 3,
+    "classroom": "5"
+  },
+  {
+    "lesson_id": "6330b738-7978-5abc-b7c7-e2b36ae97a7c",
+    "source_record": 18,
+    "grade": 3,
+    "classroom": "3"
+  },
+  {
+    "lesson_id": "d905abf0-9bd6-53c7-abf1-2abb3ffab69e",
+    "source_record": 19,
+    "grade": 3,
+    "classroom": "1"
+  },
+  {
+    "lesson_id": "a7e40660-b503-543f-9f60-07d1efe6aacd",
+    "source_record": 19,
+    "grade": 3,
+    "classroom": "2"
+  },
+  {
+    "lesson_id": "b9edb823-e8f5-5e9e-a877-ed5648bee439",
+    "source_record": 20,
+    "grade": 6,
+    "classroom": "1"
+  },
+  {
+    "lesson_id": "90c64978-a1c4-5f77-8046-5c501448db85",
+    "source_record": 20,
+    "grade": 6,
+    "classroom": "2"
+  },
+  {
+    "lesson_id": "83f804d8-fcd1-5732-a595-f5bf411d00b8",
+    "source_record": 21,
+    "grade": 3,
+    "classroom": "4"
+  },
+  {
+    "lesson_id": "ca510d0c-b2a8-592b-8ae7-64aeedfd7cd4",
+    "source_record": 21,
+    "grade": 3,
+    "classroom": "5"
+  },
+  {
+    "lesson_id": "59684926-9240-596c-9246-c3791ad24d33",
+    "source_record": 22,
+    "grade": 3,
+    "classroom": "2"
+  },
+  {
+    "lesson_id": "98097766-7ba7-5474-b9e2-a328547d91a7",
+    "source_record": 22,
+    "grade": 3,
+    "classroom": "3"
+  },
+  {
+    "lesson_id": "4962d78b-dfc2-5241-8612-d3fa5adb2821",
+    "source_record": 23,
+    "grade": 6,
+    "classroom": "1"
+  },
+  {
+    "lesson_id": "09025afe-dd83-5b27-9c33-e80af2854b6f",
+    "source_record": 23,
+    "grade": 6,
+    "classroom": "2"
+  },
+  {
+    "lesson_id": "fb106e30-26d8-52c4-ad60-1b26ad86f292",
+    "source_record": 24,
+    "grade": 3,
+    "classroom": "4"
+  },
+  {
+    "lesson_id": "b4c54c59-79dc-5341-9310-ef29ab00a7c5",
+    "source_record": 24,
+    "grade": 3,
+    "classroom": "5"
+  },
+  {
+    "lesson_id": "4bb018f7-2aa1-51c0-b4c6-23b04c91f888",
+    "source_record": 25,
+    "grade": 3,
+    "classroom": "2"
+  },
+  {
+    "lesson_id": "578aa94c-c3f6-5b18-823d-b8277557d0df",
+    "source_record": 25,
+    "grade": 3,
+    "classroom": "3"
+  },
+  {
+    "lesson_id": "0b185d17-fcb5-5af4-bbe9-1e58f314c3c7",
+    "source_record": 26,
+    "grade": 6,
+    "classroom": "1"
+  },
+  {
+    "lesson_id": "0488bccc-8b07-55bb-b331-ec3d45b13b92",
+    "source_record": 26,
+    "grade": 6,
+    "classroom": "2"
+  },
+  {
+    "lesson_id": "4684ad2d-2521-5187-9b5d-de6abc585692",
+    "source_record": 27,
+    "grade": 3,
+    "classroom": "4"
+  },
+  {
+    "lesson_id": "4bfaec52-5a80-50fb-80bb-62bf96661cf0",
+    "source_record": 27,
+    "grade": 3,
+    "classroom": "5"
+  },
+  {
+    "lesson_id": "eae88493-7477-5a24-a05b-e48abbc104d4",
+    "source_record": 28,
+    "grade": 3,
+    "classroom": "3"
+  },
+  {
+    "lesson_id": "a4852852-69cf-5b46-9e70-9cc822844ef3",
+    "source_record": 28,
+    "grade": 3,
+    "classroom": "4"
+  },
+  {
+    "lesson_id": "8953ef0b-dd11-5513-bc4b-6eca8627f3ee",
+    "source_record": 28,
+    "grade": 3,
+    "classroom": "5"
+  },
+  {
+    "lesson_id": "bdec5e73-9d12-5cb1-bd25-f73a98ce3c9c",
+    "source_record": 29,
+    "grade": 6,
+    "classroom": "1"
+  },
+  {
+    "lesson_id": "ca3f2da5-13b9-5e23-8593-af051ad2b234",
+    "source_record": 29,
+    "grade": 6,
+    "classroom": "2"
+  },
+  {
+    "lesson_id": "f900363b-13b7-5769-8196-7ef3c0683068",
+    "source_record": 30,
+    "grade": 3,
+    "classroom": "2"
+  },
+  {
+    "lesson_id": "53ea96f7-9902-5086-a346-418af5a6172e",
+    "source_record": 30,
+    "grade": 3,
+    "classroom": "3"
+  },
+  {
+    "lesson_id": "2954afb1-7e01-5b2a-b820-66cfb22ff422",
+    "source_record": 31,
+    "grade": 3,
+    "classroom": "1"
+  },
+  {
+    "lesson_id": "1cb168e3-8ee3-5acc-9b79-aa32f532a241",
+    "source_record": 32,
+    "grade": 3,
+    "classroom": "4"
+  },
+  {
+    "lesson_id": "5cb77ffd-fd24-525e-81bf-87ca062a9ab8",
+    "source_record": 32,
+    "grade": 3,
+    "classroom": "5"
+  },
+  {
+    "lesson_id": "a12a101b-a413-50bd-b541-7ef8b58e0633",
+    "source_record": 33,
+    "grade": 3,
+    "classroom": "2"
+  },
+  {
+    "lesson_id": "d827ea9c-a8b6-5233-af74-cba1f35b1f3d",
+    "source_record": 34,
+    "grade": 3,
+    "classroom": "2"
+  },
+  {
+    "lesson_id": "340b6d49-c378-5706-9ea8-26843fc44681",
+    "source_record": 34,
+    "grade": 3,
+    "classroom": "3"
+  },
+  {
+    "lesson_id": "9d527757-cbf6-5cac-a62e-0eddabdbdff4",
+    "source_record": 35,
+    "grade": 6,
+    "classroom": "1"
+  },
+  {
+    "lesson_id": "b0c71e4a-1b3e-5d3a-aa6b-21d89b4f8c4a",
+    "source_record": 35,
+    "grade": 6,
+    "classroom": "2"
+  }
+]

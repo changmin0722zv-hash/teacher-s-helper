@@ -1,0 +1,1445 @@
+"use client";
+
+import {
+  Children,
+  cloneElement,
+  isValidElement,
+  useCallback,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+} from "react";
+import {
+  BookOpen,
+  CalendarDays,
+  Columns3,
+  ListChecks,
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+  ArrowUpRight,
+  RefreshCw,
+  X,
+  Copy,
+  Trash2,
+  Download,
+  Check,
+  LogOut,
+  Layers3,
+} from "lucide-react";
+import {
+  copyLesson,
+  dueLabel,
+  koreaToday,
+  newLesson,
+  newUnit,
+  plannerSchema,
+  shiftDate,
+  STATUSES,
+  SUBJECTS,
+  SUBJECT_COLORS,
+  unlinkUnit,
+  type Lesson,
+  type Planner,
+  type Snapshot,
+  type Unit,
+} from "@/lib/planner";
+
+type View = "calendar" | "board" | "plans";
+type Editor =
+  | { kind: "lesson"; value: Lesson; fresh: boolean }
+  | { kind: "unit"; value: Unit; fresh: boolean };
+const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
+const color = (subject: string) => SUBJECT_COLORS[subject] || "#818a9f";
+function download(data: unknown, name: string) {
+  const url = URL.createObjectURL(
+    new Blob([JSON.stringify(data, null, 2) + "\n"], {
+      type: "application/json",
+    }),
+  );
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = name;
+  link.click();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+export default function PlannerApp({
+  login,
+  demo,
+}: {
+  login: string;
+  demo: boolean;
+}) {
+  const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
+  const [view, setView] = useState<View>("calendar");
+  const [planTab, setPlanTab] = useState<"lessons" | "units">("units");
+  const [today, setToday] = useState(koreaToday);
+  const [anchor, setAnchor] = useState(koreaToday);
+  const [calendarMode, setCalendarMode] = useState<"month" | "week">("month");
+  const [subject, setSubject] = useState("");
+  const [grade, setGrade] = useState("");
+  const [classroom, setClassroom] = useState("");
+  const [search, setSearch] = useState("");
+  const [editor, setEditor] = useState<Editor | null>(null);
+  const [dirty, setDirty] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [notice, setNotice] = useState("");
+  const [conflict, setConflict] = useState(false);
+  const dialog = useRef<HTMLDialogElement>(null);
+  const saving = useRef(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    setError("");
+    try {
+      const response = await fetch("/api/planner", { cache: "no-store" });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error);
+      setSnapshot({ data: plannerSchema.parse(body.data), sha: body.sha });
+      setConflict(false);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "불러오지 못했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+  useEffect(() => {
+    void load();
+  }, [load]);
+  useEffect(() => {
+    const timer = setInterval(() => setToday(koreaToday()), 60000);
+    return () => clearInterval(timer);
+  }, []);
+  useEffect(() => {
+    if (editor && !dialog.current?.open) dialog.current?.showModal();
+    if (!editor && dialog.current?.open) dialog.current?.close();
+  }, [editor]);
+  useEffect(() => {
+    const handler = (e: BeforeUnloadEvent) => {
+      if (dirty || busy) e.preventDefault();
+    };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [dirty, busy]);
+
+  async function save(data: Planner): Promise<boolean> {
+    if (!snapshot || saving.current || conflict) return false;
+    const checked = plannerSchema.safeParse(data);
+    if (!checked.success) {
+      setError(checked.error.issues[0].message);
+      return false;
+    }
+    saving.current = true;
+    setBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      const response = await fetch("/api/planner", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ data: checked.data, sha: snapshot.sha }),
+      });
+      const body = await response.json();
+      if (!response.ok) {
+        if (response.status === 409) setConflict(true);
+        throw new Error(body.error);
+      }
+      setSnapshot({ data: plannerSchema.parse(body.data), sha: body.sha });
+      setNotice(demo ? "로컬 데모에 저장했습니다." : "GitHub에 저장했습니다.");
+      return true;
+    } catch (e) {
+      setError(
+        e instanceof Error
+          ? e.message
+          : "저장하지 못했습니다. 연결을 확인해 주세요.",
+      );
+      return false;
+    } finally {
+      saving.current = false;
+      setBusy(false);
+    }
+  }
+  function open(next: Editor) {
+    setEditor(next);
+    setDirty(false);
+    setNotice("");
+    if (!conflict) setError("");
+  }
+  function close() {
+    if (busy || (dirty && !confirm("저장하지 않은 변경사항을 닫을까요?")))
+      return;
+    setEditor(null);
+    setDirty(false);
+  }
+  function editLesson(patch: Partial<Lesson>) {
+    if (editor?.kind === "lesson") {
+      setEditor({ ...editor, value: { ...editor.value, ...patch } });
+      setDirty(true);
+    }
+  }
+  function editUnit(patch: Partial<Unit>) {
+    if (editor?.kind === "unit") {
+      setEditor({ ...editor, value: { ...editor.value, ...patch } });
+      setDirty(true);
+    }
+  }
+  function beginLesson(date = today, unit?: Unit, sessionId?: string) {
+    const lesson = newLesson(date);
+    if (grade) lesson.grade = Number(grade);
+    if (subject) lesson.subject = subject;
+    if (classroom) lesson.classroom = classroom;
+    if (unit) {
+      const idx = unit.sessions.findIndex((s) => s.id === sessionId);
+      Object.assign(lesson, {
+        unitId: unit.id,
+        sessionId: sessionId || null,
+        grade: unit.grade,
+        subject: unit.subject,
+        title: `${unit.title}${idx >= 0 ? ` · ${idx + 1}차시` : ""}`,
+        activities: unit.sessions[idx]?.activity || "",
+      });
+    }
+    open({ kind: "lesson", value: lesson, fresh: true });
+  }
+  async function submitEditor(e: React.FormEvent) {
+    e.preventDefault();
+    if (!editor || !snapshot) return;
+    const value = { ...editor.value, updatedAt: new Date().toISOString() };
+    const data: Planner =
+      editor.kind === "lesson"
+        ? {
+            ...snapshot.data,
+            lessons: [
+              ...snapshot.data.lessons.filter((l) => l.id !== value.id),
+              value as Lesson,
+            ],
+          }
+        : {
+            ...snapshot.data,
+            units: [
+              ...snapshot.data.units.filter((u) => u.id !== value.id),
+              value as Unit,
+            ],
+          };
+    if (await save(data)) {
+      setEditor(null);
+      setDirty(false);
+    }
+  }
+  async function removeEditor() {
+    if (
+      !editor ||
+      !snapshot ||
+      !confirm(
+        editor.kind === "unit"
+          ? "이 단원을 삭제할까요? 연결된 수업은 남고 단원 연결만 해제됩니다."
+          : "이 수업 계획을 삭제할까요?",
+      )
+    )
+      return;
+    const data =
+      editor.kind === "unit"
+        ? unlinkUnit(snapshot.data, editor.value.id)
+        : {
+            ...snapshot.data,
+            lessons: snapshot.data.lessons.filter(
+              (l) => l.id !== editor.value.id,
+            ),
+          };
+    if (await save(data)) {
+      setEditor(null);
+      setDirty(false);
+    }
+  }
+  async function changeStatus(id: string, status: Lesson["status"]) {
+    if (!snapshot || busy || conflict) return;
+    const lesson = snapshot.data.lessons.find((l) => l.id === id);
+    if (!lesson || lesson.status === status) return;
+    await save({
+      ...snapshot.data,
+      lessons: snapshot.data.lessons.map((l) =>
+        l.id === id ? { ...l, status, updatedAt: new Date().toISOString() } : l,
+      ),
+    });
+  }
+  async function reload() {
+    if (
+      dirty &&
+      !confirm(
+        "편집 중인 내용이 사라집니다. 필요하면 먼저 초안을 내려받아 주세요. 최신 내용을 불러올까요?",
+      )
+    )
+      return;
+    setEditor(null);
+    setDirty(false);
+    await load();
+  }
+
+  const data = snapshot?.data;
+  const lessons = (data?.lessons || [])
+    .filter(
+      (l) =>
+        (!subject || l.subject === subject) &&
+        (!grade || String(l.grade) === grade) &&
+        (!classroom || l.classroom === classroom) &&
+        (!search ||
+          `${l.title} ${l.objective} ${l.activities}`
+            .toLowerCase()
+            .includes(search.toLowerCase())),
+    )
+    .sort(
+      (a, b) =>
+        a.date.localeCompare(b.date) ||
+        a.grade - b.grade ||
+        a.classroom.localeCompare(b.classroom, "ko", { numeric: true }),
+    );
+  const units = (data?.units || []).filter(
+    (u) =>
+      (!subject || u.subject === subject) &&
+      (!grade || String(u.grade) === grade) &&
+      (!search || u.title.toLowerCase().includes(search.toLowerCase())),
+  );
+  const monthStart = anchor.slice(0, 7) + "-01";
+  const start =
+    calendarMode === "month"
+      ? shiftDate(monthStart, -new Date(monthStart + "T00:00:00Z").getUTCDay())
+      : shiftDate(anchor, -new Date(anchor + "T00:00:00Z").getUTCDay());
+  const calendarDates = Array.from(
+    { length: calendarMode === "month" ? 42 : 7 },
+    (_, i) => shiftDate(start, i),
+  );
+  const allSubjects = [
+    ...new Set([
+      ...SUBJECTS,
+      ...(data?.lessons.map((l) => l.subject) || []),
+      ...(data?.units.map((u) => u.subject) || []),
+    ]),
+  ];
+  const classes = [
+    ...new Set(
+      (data?.lessons || [])
+        .filter((l) => !grade || String(l.grade) === grade)
+        .map((l) => l.classroom),
+    ),
+  ].sort((a, b) => a.localeCompare(b, "ko", { numeric: true }));
+  const lesson = editor?.kind === "lesson" ? editor.value : null;
+  const unit = editor?.kind === "unit" ? editor.value : null;
+  const selectedUnit = data?.units.find((u) => u.id === lesson?.unitId);
+  const busyOrMissing = busy || loading || !snapshot;
+  function moveCalendar(direction: number) {
+    if (calendarMode === "week")
+      return setAnchor(shiftDate(anchor, direction * 7));
+    const date = new Date(monthStart + "T00:00:00Z");
+    date.setUTCMonth(date.getUTCMonth() + direction);
+    setAnchor(date.toISOString().slice(0, 10));
+  }
+  const errorBox = error && (
+    <div className="error" role="alert">
+      <span>{error}</span>
+      {conflict && (
+        <div className="inline-actions">
+          {editor && (
+            <button
+              type="button"
+              onClick={() => download(editor, `수업-미저장-초안-${today}.json`)}
+            >
+              <Download size={14} /> 초안 내려받기
+            </button>
+          )}
+          <button type="button" onClick={() => void reload()}>
+            최신 내용 불러오기
+          </button>
+        </div>
+      )}
+      {!conflict && (
+        <button type="button" onClick={() => window.location.reload()}>
+          페이지 새로고침
+        </button>
+      )}
+    </div>
+  );
+
+  return (
+    <div className="app-shell">
+      <aside className="sidebar">
+        <a className="brand" href="/">
+          <span className="brand-icon">
+            <BookOpen size={22} />
+          </span>
+          <span>
+            <strong>수업의 결</strong>
+            <small>나의 수업 계획 공간</small>
+          </span>
+        </a>
+        <div className="workspace-label">MY WORKSPACE</div>
+        <nav aria-label="주요 메뉴">
+          {(
+            [
+              { id: "calendar", label: "수업 달력", icon: CalendarDays },
+              { id: "board", label: "준비상태 보드", icon: Columns3 },
+              { id: "plans", label: "수업·단원 계획", icon: ListChecks },
+            ] as const
+          ).map((item) => (
+            <button
+              key={item.id}
+              className={view === item.id ? "nav-item active" : "nav-item"}
+              onClick={() => setView(item.id)}
+            >
+              <item.icon size={19} />
+              {item.label}
+              {view === item.id && <span className="active-dot" />}
+            </button>
+          ))}
+        </nav>
+        <div className="sidebar-note">
+          <span>작은 기록이 모여</span>
+          <strong>더 좋은 수업이 됩니다.</strong>
+          <p>
+            오늘의 반응을 남겨
+            <br />
+            다음 수업으로 이어가세요.
+          </p>
+          <BookOpen size={32} strokeWidth={1} />
+        </div>
+        <div className="profile">
+          <span className="avatar">T</span>
+          <div>
+            <strong>선생님의 작업실</strong>
+            <small>{login}</small>
+          </div>
+          {!demo && (
+            <form action="/api/auth/logout" method="post">
+              <button
+                className="icon-button"
+                title="로그아웃"
+                aria-label="로그아웃"
+              >
+                <LogOut size={17} />
+              </button>
+            </form>
+          )}
+        </div>
+      </aside>
+      <div className="workspace">
+        <header className="topbar">
+          <span>
+            나의 작업실 <span className="slash">/</span>{" "}
+            {view === "calendar"
+              ? "수업 달력"
+              : view === "board"
+                ? "준비상태 보드"
+                : "수업·단원 계획"}
+          </span>
+          <span className="private-tag">
+            <span /> PRIVATE WORKSPACE
+          </span>
+        </header>
+        {demo && (
+          <div className="demo-banner">
+            로컬 데모 · 입력한 내용은 이 컴퓨터에만 저장됩니다. GitHub와
+            연결되지 않은 검증용 모드입니다.
+          </div>
+        )}
+        <main className="main-content">
+          <div className="page-heading">
+            <div>
+              <span className="eyebrow">A LITTLE PLAN, A BETTER CLASS</span>
+              <h1>
+                {view === "calendar"
+                  ? "수업 달력"
+                  : view === "board"
+                    ? "준비상태 보드"
+                    : "수업·단원 계획"}
+                <span className="heading-dot">.</span>
+              </h1>
+              <p>
+                {view === "calendar"
+                  ? "다가올 수업을 살펴보고, 나만의 속도로 준비해 보세요."
+                  : view === "board"
+                    ? "생각에서 준비로, 준비에서 수업으로. 한 걸음씩 이어가세요."
+                    : "단원의 큰 그림을 그리고, 한 차시씩 구체화해 보세요."}
+              </p>
+            </div>
+            <button
+              className="button primary"
+              disabled={busyOrMissing}
+              onClick={() => beginLesson()}
+            >
+              <Plus size={18} /> 수업 계획 추가
+            </button>
+          </div>
+          <section className="stats" aria-label="수업 현황">
+            <Stat
+              label="등록한 수업"
+              value={lessons.length}
+              suffix="개"
+              detail="현재 필터 기준"
+            />
+            <Stat
+              label="오늘의 수업"
+              value={lessons.filter((l) => l.date === today).length}
+              suffix="개"
+              detail={today.replaceAll("-", ". ")}
+            />
+            <Stat
+              label="준비 중인 수업"
+              value={
+                lessons.filter(
+                  (l) => l.status === "계획 중" || l.status === "자료 준비 중",
+                ).length
+              }
+              suffix="개"
+              detail="차근차근 준비해요"
+            />
+            <Stat
+              label="준비 완료"
+              value={lessons.filter((l) => l.status === "준비 완료").length}
+              suffix="개"
+              detail="수업을 기다리고 있어요"
+            />
+          </section>
+          <div className="filter-bar">
+            <div className="filters">
+              <select
+                aria-label="교과 필터"
+                value={subject}
+                onChange={(e) => setSubject(e.target.value)}
+              >
+                <option value="">모든 교과</option>
+                {allSubjects.map((s) => (
+                  <option key={s}>{s}</option>
+                ))}
+              </select>
+              <select
+                aria-label="학년 필터"
+                value={grade}
+                onChange={(e) => {
+                  setGrade(e.target.value);
+                  setClassroom("");
+                }}
+              >
+                <option value="">모든 학년</option>
+                {[1, 2, 3, 4, 5, 6].map((g) => (
+                  <option key={g} value={g}>
+                    {g}학년
+                  </option>
+                ))}
+              </select>
+              <select
+                aria-label="학반 필터"
+                value={classroom}
+                onChange={(e) => setClassroom(e.target.value)}
+                disabled={view === "plans" && planTab === "units"}
+              >
+                <option value="">모든 학반</option>
+                {classes.map((c) => (
+                  <option key={c} value={c}>
+                    {c}반
+                  </option>
+                ))}
+              </select>
+              <input
+                className="search"
+                aria-label="계획 검색"
+                placeholder="계획 검색…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+              />
+            </div>
+            <button
+              className="icon-button"
+              aria-label="최신 내용 불러오기"
+              title="Codex에서 수정한 내용 불러오기"
+              disabled={busyOrMissing}
+              onClick={() => void reload()}
+            >
+              <RefreshCw size={17} className={loading ? "spin" : ""} />
+            </button>
+          </div>
+          {!editor && errorBox}
+          {notice && (
+            <div className="notice" role="status">
+              <Check size={15} />
+              {notice}
+            </div>
+          )}
+          {loading ? (
+            <div className="empty-state">수업 계획을 불러오고 있어요…</div>
+          ) : !snapshot ? (
+            <div className="empty-state">
+              <BookOpen />
+              <h2>계획을 불러오지 못했어요</h2>
+              <p>연결 상태를 확인한 뒤 다시 시도해 주세요.</p>
+              <button className="button" onClick={() => void load()}>
+                다시 불러오기
+              </button>
+            </div>
+          ) : (
+            <>
+              {view === "calendar" && (
+                <section className="calendar-panel">
+                  <div className="calendar-toolbar">
+                    <div className="calendar-title">
+                      <h2>
+                        {Number(anchor.slice(0, 4))}년{" "}
+                        <strong>{Number(anchor.slice(5, 7))}월</strong>
+                      </h2>
+                      <button
+                        className="icon-button"
+                        aria-label="이전 기간"
+                        onClick={() => moveCalendar(-1)}
+                      >
+                        <ChevronLeft size={18} />
+                      </button>
+                      <button
+                        className="icon-button"
+                        aria-label="다음 기간"
+                        onClick={() => moveCalendar(1)}
+                      >
+                        <ChevronRight size={18} />
+                      </button>
+                      <button
+                        className="today-button"
+                        onClick={() => setAnchor(today)}
+                      >
+                        오늘
+                      </button>
+                    </div>
+                    <div className="segmented" aria-label="달력 보기">
+                      <button
+                        aria-pressed={calendarMode === "month"}
+                        className={calendarMode === "month" ? "selected" : ""}
+                        onClick={() => setCalendarMode("month")}
+                      >
+                        월간
+                      </button>
+                      <button
+                        aria-pressed={calendarMode === "week"}
+                        className={calendarMode === "week" ? "selected" : ""}
+                        onClick={() => setCalendarMode("week")}
+                      >
+                        주간
+                      </button>
+                    </div>
+                  </div>
+                  <div className="calendar-grid weekdays">
+                    {weekdays.map((day, i) => (
+                      <div
+                        key={day}
+                        className={
+                          i === 0 ? "sunday" : i === 6 ? "saturday" : ""
+                        }
+                      >
+                        {day}
+                      </div>
+                    ))}
+                  </div>
+                  <div
+                    className={`calendar-grid dates ${calendarMode === "week" ? "week-mode" : ""}`}
+                  >
+                    {calendarDates.map((date, idx) => (
+                      <div
+                        key={date}
+                        className={`day-cell ${date.slice(0, 7) !== anchor.slice(0, 7) ? "outside" : ""} ${date === today ? "is-today" : ""}`}
+                      >
+                        <div className="day-heading">
+                          <span
+                            className={`date-number ${idx % 7 === 0 ? "sunday" : idx % 7 === 6 ? "saturday" : ""}`}
+                          >
+                            {Number(date.slice(8))}
+                          </span>
+                          <button
+                            className="add-day"
+                            disabled={busy}
+                            aria-label={`${date} 수업 추가`}
+                            onClick={() => beginLesson(date)}
+                          >
+                            <Plus size={14} />
+                          </button>
+                        </div>
+                        {lessons
+                          .filter((l) => l.date === date)
+                          .map((l) => (
+                            <button
+                              key={l.id}
+                              className={`calendar-event ${l.status === "수업 완료" ? "completed" : ""}`}
+                              style={
+                                {
+                                  "--subject-color": color(l.subject),
+                                } as React.CSSProperties
+                              }
+                              onClick={() =>
+                                open({ kind: "lesson", value: l, fresh: false })
+                              }
+                            >
+                              <span className="event-meta">
+                                {l.subject} · {l.grade}-{l.classroom}
+                                {l.status === "준비 완료" && (
+                                  <Check size={12} />
+                                )}
+                              </span>
+                              <strong>{l.title}</strong>
+                            </button>
+                          ))}
+                      </div>
+                    ))}
+                  </div>
+                  <footer className="calendar-footer">
+                    <span>날짜의 + 버튼으로 새로운 수업을 계획하세요.</span>
+                    <div>
+                      {[...new Set(lessons.map((l) => l.subject))]
+                        .slice(0, 7)
+                        .map((s) => (
+                          <span key={s}>
+                            <i style={{ background: color(s) }} />
+                            {s}
+                          </span>
+                        ))}
+                    </div>
+                  </footer>
+                </section>
+              )}
+              {view === "board" && (
+                <>
+                  <p className="view-hint">
+                    카드를 옮기거나 카드의 상태를 선택해 준비상태를 바꿀 수
+                    있어요.
+                  </p>
+                  <section className="board">
+                    {STATUSES.map((status, index) => (
+                      <div
+                        key={status}
+                        className={`board-column status-${index}`}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          void changeStatus(
+                            e.dataTransfer.getData("text/plain"),
+                            status,
+                          );
+                        }}
+                      >
+                        <h2>
+                          <span className="status-dot" />
+                          {status}
+                          <span className="count">
+                            {lessons.filter((l) => l.status === status).length}
+                          </span>
+                        </h2>
+                        <div className="board-cards">
+                          {lessons
+                            .filter((l) => l.status === status)
+                            .map((l) => (
+                              <article
+                                key={l.id}
+                                className="lesson-card"
+                                draggable={!busy && !conflict}
+                                onDragStart={(e) =>
+                                  e.dataTransfer.setData("text/plain", l.id)
+                                }
+                              >
+                                <button
+                                  className="card-open"
+                                  onClick={() =>
+                                    open({
+                                      kind: "lesson",
+                                      value: l,
+                                      fresh: false,
+                                    })
+                                  }
+                                >
+                                  <span
+                                    className="subject-tag"
+                                    style={{ color: color(l.subject) }}
+                                  >
+                                    {l.subject}
+                                  </span>
+                                  <h3>{l.title}</h3>
+                                  <p>
+                                    {l.grade}학년 {l.classroom}반 ·{" "}
+                                    {l.date.slice(5).replace("-", ". ")}
+                                  </p>
+                                  <span className="due">
+                                    {dueLabel(l.date, today)}
+                                  </span>
+                                </button>
+                                <select
+                                  aria-label={`${l.title} 준비상태`}
+                                  value={l.status}
+                                  disabled={busy || conflict}
+                                  onChange={(e) =>
+                                    void changeStatus(
+                                      l.id,
+                                      e.target.value as Lesson["status"],
+                                    )
+                                  }
+                                >
+                                  {STATUSES.map((s) => (
+                                    <option key={s}>{s}</option>
+                                  ))}
+                                </select>
+                              </article>
+                            ))}
+                          {!lessons.some((l) => l.status === status) && (
+                            <p className="column-empty">아직 수업이 없어요.</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </section>
+                </>
+              )}
+              {view === "plans" && (
+                <section className="plans-panel">
+                  <div className="plans-toolbar">
+                    <div className="tabs">
+                      <button
+                        className={planTab === "units" ? "active" : ""}
+                        onClick={() => setPlanTab("units")}
+                      >
+                        단원 지도 계획 <span>{units.length}</span>
+                      </button>
+                      <button
+                        className={planTab === "lessons" ? "active" : ""}
+                        onClick={() => setPlanTab("lessons")}
+                      >
+                        수업 계획 <span>{lessons.length}</span>
+                      </button>
+                    </div>
+                    <button
+                      className="button"
+                      disabled={busy}
+                      onClick={() => {
+                        const value = newUnit();
+                        if (subject) value.subject = subject;
+                        if (grade) value.grade = Number(grade);
+                        open({ kind: "unit", value, fresh: true });
+                      }}
+                    >
+                      <Plus size={16} /> 단원 추가
+                    </button>
+                  </div>
+                  {planTab === "units" ? (
+                    <div className="unit-grid">
+                      {units.map((u) => (
+                        <article className="unit-card" key={u.id}>
+                          <div className="unit-card-heading">
+                            <span
+                              className="subject-tag"
+                              style={{ color: color(u.subject) }}
+                            >
+                              {u.grade}학년 · {u.subject}
+                            </span>
+                            <button
+                              className="icon-button"
+                              aria-label={`${u.title} 단원 수정`}
+                              onClick={() =>
+                                open({ kind: "unit", value: u, fresh: false })
+                              }
+                            >
+                              <ArrowUpRight size={19} />
+                            </button>
+                          </div>
+                          <h3>{u.title}</h3>
+                          <p className="unit-achievement">
+                            {u.achievement ||
+                              "성취 수준을 자유롭게 기록해 보세요."}
+                          </p>
+                          <div className="unit-sessions">
+                            {u.sessions.map((s, i) => (
+                              <div key={s.id}>
+                                <span>{i + 1}차시</span>
+                                <p>{s.activity || "활동 내용 미정"}</p>
+                                <button
+                                  className="icon-button"
+                                  title="이 차시로 수업 만들기"
+                                  aria-label={`${u.title} ${i + 1}차시 수업 만들기`}
+                                  disabled={busy}
+                                  onClick={() => beginLesson(today, u, s.id)}
+                                >
+                                  <Plus size={15} />
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                          <footer>
+                            {u.sessions.length}차시{" "}
+                            <span>
+                              연결된 수업{" "}
+                              {
+                                data!.lessons.filter((l) => l.unitId === u.id)
+                                  .length
+                              }
+                              개
+                            </span>
+                          </footer>
+                        </article>
+                      ))}
+                      {units.length === 0 && (
+                        <Empty
+                          title="첫 단원의 큰 그림을 그려보세요"
+                          description="단원과 차시별 활동을 정리한 다음, 학급별 수업으로 이어갈 수 있어요."
+                          action="단원 계획 만들기"
+                          onClick={() =>
+                            open({
+                              kind: "unit",
+                              value: newUnit(),
+                              fresh: true,
+                            })
+                          }
+                        />
+                      )}
+                    </div>
+                  ) : lessons.length ? (
+                    <div className="table-wrap">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>수업</th>
+                            <th>학급</th>
+                            <th>날짜</th>
+                            <th>준비상태</th>
+                            <th>남은 일 수</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {lessons.map((l) => (
+                            <tr key={l.id}>
+                              <td>
+                                <button
+                                  className="table-title"
+                                  onClick={() =>
+                                    open({
+                                      kind: "lesson",
+                                      value: l,
+                                      fresh: false,
+                                    })
+                                  }
+                                >
+                                  <span style={{ color: color(l.subject) }}>
+                                    {l.subject}
+                                  </span>
+                                  {l.title}
+                                </button>
+                              </td>
+                              <td>
+                                {l.grade}학년 {l.classroom}반
+                              </td>
+                              <td>{l.date}</td>
+                              <td>
+                                <span
+                                  className={`status-pill status-${STATUSES.indexOf(l.status)}`}
+                                >
+                                  {l.status}
+                                </span>
+                              </td>
+                              <td>{dueLabel(l.date, today)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <Empty
+                      title="아직 등록된 수업이 없어요"
+                      description="새 수업을 추가하거나 단원의 차시에서 수업을 만들어 보세요."
+                      action="수업 계획 만들기"
+                      onClick={() => beginLesson()}
+                    />
+                  )}
+                </section>
+              )}
+            </>
+          )}
+          <footer className="workspace-footer">
+            <span>수업의 결 · 선생님의 하루를 위한 작은 도구</span>
+            <button
+              disabled={!snapshot}
+              onClick={() =>
+                snapshot && download(snapshot.data, `수업계획-${today}.json`)
+              }
+            >
+              <Download size={14} /> 전체 기록 내려받기
+            </button>
+          </footer>
+        </main>
+      </div>
+      <dialog
+        ref={dialog}
+        className="editor-dialog"
+        onCancel={(e) => {
+          e.preventDefault();
+          close();
+        }}
+        aria-labelledby="editor-title"
+      >
+        {editor && (
+          <form onSubmit={submitEditor}>
+            <header className="editor-header">
+              <div>
+                <span className="eyebrow">
+                  {editor.kind === "lesson" ? "LESSON DETAILS" : "UNIT PLAN"}
+                </span>
+                <h2 id="editor-title">
+                  {editor.kind === "lesson"
+                    ? "수업 계획 세부사항"
+                    : "단원 지도 계획"}
+                </h2>
+              </div>
+              <button
+                type="button"
+                className="icon-button"
+                aria-label="편집 닫기"
+                onClick={close}
+                disabled={busy}
+              >
+                <X />
+              </button>
+            </header>
+            <div className="editor-body">
+              {errorBox}
+              {editor.fresh && (
+                <p className="form-note">
+                  새로운 {editor.kind === "lesson" ? "수업" : "단원"}{" "}
+                  계획이에요. * 항목을 입력한 뒤 저장해 주세요.
+                </p>
+              )}
+              <fieldset disabled={busy}>
+                <div className="form-grid">
+                  <Field label="교과 *">
+                    <input
+                      required
+                      maxLength={160}
+                      list="subject-options"
+                      value={editor.value.subject}
+                      onChange={(e) =>
+                        lesson
+                          ? editLesson({
+                              subject: e.target.value,
+                              unitId: null,
+                              sessionId: null,
+                            })
+                          : editUnit({ subject: e.target.value })
+                      }
+                    />
+                    <datalist id="subject-options">
+                      {allSubjects.map((s) => (
+                        <option key={s} value={s} />
+                      ))}
+                    </datalist>
+                  </Field>
+                  <Field label="학년 *">
+                    <select
+                      value={editor.value.grade}
+                      onChange={(e) =>
+                        lesson
+                          ? editLesson({
+                              grade: Number(e.target.value),
+                              unitId: null,
+                              sessionId: null,
+                            })
+                          : editUnit({ grade: Number(e.target.value) })
+                      }
+                    >
+                      {[1, 2, 3, 4, 5, 6].map((g) => (
+                        <option key={g} value={g}>
+                          {g}학년
+                        </option>
+                      ))}
+                    </select>
+                  </Field>
+                  {lesson && (
+                    <>
+                      <Field label="날짜 *">
+                        <input
+                          required
+                          type="date"
+                          value={lesson.date}
+                          onChange={(e) => editLesson({ date: e.target.value })}
+                        />
+                      </Field>
+                      <Field label="학반 *">
+                        <div className="input-suffix">
+                          <input
+                            required
+                            maxLength={40}
+                            value={lesson.classroom}
+                            onChange={(e) =>
+                              editLesson({ classroom: e.target.value })
+                            }
+                          />
+                          <span aria-hidden="true">반</span>
+                        </div>
+                      </Field>
+                    </>
+                  )}
+                  <Field label={lesson ? "수업제목 *" : "단원명 *"} wide>
+                    <input
+                      required
+                      maxLength={160}
+                      placeholder={
+                        lesson
+                          ? "어떤 수업을 계획하고 있나요?"
+                          : "이번 단원의 이름을 적어주세요"
+                      }
+                      value={editor.value.title}
+                      onChange={(e) =>
+                        lesson
+                          ? editLesson({ title: e.target.value })
+                          : editUnit({ title: e.target.value })
+                      }
+                    />
+                  </Field>
+                  {lesson && (
+                    <>
+                      <Field label="준비상태">
+                        <select
+                          value={lesson.status}
+                          onChange={(e) =>
+                            editLesson({
+                              status: e.target.value as Lesson["status"],
+                            })
+                          }
+                        >
+                          {STATUSES.map((s) => (
+                            <option key={s}>{s}</option>
+                          ))}
+                        </select>
+                      </Field>
+                      <Field label="수업까지 남은 일 수">
+                        <div className="read-only">
+                          {lesson.date
+                            ? dueLabel(lesson.date, today)
+                            : "날짜를 선택하세요"}
+                          <small>한국 시간 기준 · 자동 계산</small>
+                        </div>
+                      </Field>
+                      <Field label="연결할 단원">
+                        <select
+                          value={lesson.unitId || ""}
+                          onChange={(e) =>
+                            editLesson({
+                              unitId: e.target.value || null,
+                              sessionId: null,
+                            })
+                          }
+                        >
+                          <option value="">단원 없이 작성</option>
+                          {data?.units
+                            .filter(
+                              (u) =>
+                                u.grade === lesson.grade &&
+                                u.subject === lesson.subject,
+                            )
+                            .map((u) => (
+                              <option key={u.id} value={u.id}>
+                                {u.title}
+                              </option>
+                            ))}
+                        </select>
+                      </Field>
+                      <Field label="단원 차시">
+                        <select
+                          disabled={!selectedUnit}
+                          value={lesson.sessionId || ""}
+                          onChange={(e) =>
+                            editLesson({ sessionId: e.target.value || null })
+                          }
+                        >
+                          <option value="">차시 미지정</option>
+                          {selectedUnit?.sessions.map((s, i) => (
+                            <option key={s.id} value={s.id}>
+                              {i + 1}차시
+                            </option>
+                          ))}
+                        </select>
+                      </Field>
+                      <TextField
+                        label="학습목표"
+                        value={lesson.objective}
+                        onChange={(objective) => editLesson({ objective })}
+                        placeholder="수업을 통해 학생들이 배우게 될 내용을 적어주세요."
+                      />
+                      <TextField
+                        label="교재"
+                        value={lesson.materials}
+                        onChange={(materials) => editLesson({ materials })}
+                        placeholder="교과서 쪽수, 활동지, 준비물, 참고 링크 등"
+                      />
+                      <TextField
+                        label="활동"
+                        value={lesson.activities}
+                        onChange={(activities) => editLesson({ activities })}
+                        placeholder="도입부터 정리까지, 수업의 흐름을 자유롭게 적어주세요."
+                        rows={5}
+                      />
+                      <TextField
+                        label="학생피드백"
+                        value={lesson.feedback}
+                        onChange={(feedback) => editLesson({ feedback })}
+                        placeholder="학생들이 보인 반응과 다음 수업에 참고할 점을 남겨주세요."
+                      />
+                      <TextField
+                        label="참고사항"
+                        value={lesson.notes}
+                        onChange={(notes) => editLesson({ notes })}
+                      />
+                    </>
+                  )}
+                  {unit && (
+                    <>
+                      <TextField
+                        label="성취 수준"
+                        value={unit.achievement}
+                        onChange={(achievement) => editUnit({ achievement })}
+                        placeholder="교육과정 성취기준과 학생의 도달 수준을 연결해 자유롭게 작성해 주세요."
+                        rows={4}
+                      />
+                      <div className="wide session-editor">
+                        <div className="section-heading">
+                          <h3>차시별 활동내용</h3>
+                          <span>{unit.sessions.length}차시</span>
+                        </div>
+                        {unit.sessions.map((s, i) => {
+                          const linked = data?.lessons.some(
+                            (l) => l.unitId === unit.id && l.sessionId === s.id,
+                          );
+                          return (
+                            <div className="session-row" key={s.id}>
+                              <label htmlFor={`session-${s.id}`}>
+                                {i + 1}차시
+                              </label>
+                              <textarea
+                                id={`session-${s.id}`}
+                                rows={2}
+                                maxLength={20000}
+                                value={s.activity}
+                                placeholder="이 차시의 활동을 적어주세요"
+                                onChange={(e) =>
+                                  editUnit({
+                                    sessions: unit.sessions.map((x) =>
+                                      x.id === s.id
+                                        ? { ...x, activity: e.target.value }
+                                        : x,
+                                    ),
+                                  })
+                                }
+                              />
+                              <button
+                                type="button"
+                                className="icon-button"
+                                aria-label={`${i + 1}차시 삭제`}
+                                title={
+                                  linked
+                                    ? "연결된 수업에서 차시 연결을 먼저 해제해 주세요"
+                                    : "차시 삭제"
+                                }
+                                disabled={unit.sessions.length <= 1 || linked}
+                                onClick={() => {
+                                  if (
+                                    !s.activity ||
+                                    confirm("이 차시의 활동내용을 삭제할까요?")
+                                  )
+                                    editUnit({
+                                      sessions: unit.sessions.filter(
+                                        (x) => x.id !== s.id,
+                                      ),
+                                    });
+                                }}
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          );
+                        })}
+                        <button
+                          type="button"
+                          className="button add-session"
+                          disabled={unit.sessions.length >= 100}
+                          onClick={() =>
+                            editUnit({
+                              sessions: [
+                                ...unit.sessions,
+                                { id: crypto.randomUUID(), activity: "" },
+                              ],
+                            })
+                          }
+                        >
+                          <Plus size={16} /> 차시 추가
+                        </button>
+                      </div>
+                      <TextField
+                        label="기본설계"
+                        value={unit.design}
+                        onChange={(design) => editUnit({ design })}
+                        placeholder="필요한 경우에만 작성해 주세요."
+                      />
+                      <TextField
+                        label="비고"
+                        value={unit.notes}
+                        onChange={(notes) => editUnit({ notes })}
+                      />
+                    </>
+                  )}
+                  <div className="recorded wide">
+                    기록한 날짜{" "}
+                    {new Intl.DateTimeFormat("ko-KR", {
+                      timeZone: "Asia/Seoul",
+                      dateStyle: "long",
+                    }).format(new Date(editor.value.createdAt))}
+                    <span>최초 작성일은 수정해도 유지됩니다.</span>
+                  </div>
+                </div>
+              </fieldset>
+            </div>
+            <footer className="editor-footer">
+              <div>
+                {!editor.fresh && (
+                  <button
+                    type="button"
+                    className="icon-button danger"
+                    aria-label="계획 삭제"
+                    disabled={busy || conflict}
+                    onClick={() => void removeEditor()}
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                )}
+                {lesson && (
+                  <button
+                    type="button"
+                    className="button"
+                    disabled={busy}
+                    onClick={() => {
+                      if (
+                        dirty &&
+                        !confirm(
+                          "현재 편집 내용을 복사해 새 수업을 만들까요? 원본에는 저장되지 않습니다.",
+                        )
+                      )
+                        return;
+                      const value = copyLesson(lesson);
+                      value.classroom = "";
+                      open({ kind: "lesson", value, fresh: true });
+                      setDirty(true);
+                    }}
+                  >
+                    <Copy size={16} /> 다른 학반에 복제
+                  </button>
+                )}
+              </div>
+              <button className="button primary" disabled={busy || conflict}>
+                {busy ? "저장 중…" : "계획 저장"}
+                <Check size={17} />
+              </button>
+            </footer>
+          </form>
+        )}
+      </dialog>
+    </div>
+  );
+}
+
+function Field({
+  label,
+  children,
+  wide = false,
+}: {
+  label: string;
+  children: React.ReactNode;
+  wide?: boolean;
+}) {
+  const id = useId();
+  function connect(nodes: React.ReactNode): React.ReactNode {
+    return Children.map(nodes, (node) => {
+      if (!isValidElement<{ id?: string; children?: React.ReactNode }>(node))
+        return node;
+      if (["input", "select", "textarea"].includes(node.type as string))
+        return cloneElement(node, { id });
+      if (node.type === "div")
+        return cloneElement(node, { children: connect(node.props.children) });
+      return node;
+    });
+  }
+  return (
+    <div className={`field ${wide ? "wide" : ""}`}>
+      <label htmlFor={id}>{label}</label>
+      {connect(children)}
+    </div>
+  );
+}
+function TextField({
+  label,
+  value,
+  onChange,
+  placeholder,
+  rows = 3,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  rows?: number;
+}) {
+  return (
+    <Field label={label} wide>
+      <textarea
+        aria-label={label}
+        maxLength={20000}
+        rows={rows}
+        value={value}
+        placeholder={placeholder}
+        onChange={(e) => onChange(e.target.value)}
+      />
+    </Field>
+  );
+}
+function Stat({
+  label,
+  value,
+  suffix,
+  detail,
+}: {
+  label: string;
+  value: number;
+  suffix: string;
+  detail: string;
+}) {
+  return (
+    <div className="stat">
+      <span>{label}</span>
+      <strong>
+        {value}
+        <small>{suffix}</small>
+      </strong>
+      <p>{detail}</p>
+    </div>
+  );
+}
+function Empty({
+  title,
+  description,
+  action,
+  onClick,
+}: {
+  title: string;
+  description: string;
+  action: string;
+  onClick: () => void;
+}) {
+  return (
+    <div className="empty-state">
+      <Layers3 size={34} strokeWidth={1.3} />
+      <h2>{title}</h2>
+      <p>{description}</p>
+      <button className="button" onClick={onClick}>
+        <Plus size={16} />
+        {action}
+      </button>
+    </div>
+  );
+}
