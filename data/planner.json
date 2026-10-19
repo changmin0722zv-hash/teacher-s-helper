@@ -170,7 +170,7 @@
       "title": "6단원 1차시",
       "grade": 3,
       "classroom": "3",
-      "status": "자료 준비 중",
+      "status": "준비 완료",
       "objective": "단원 도입 및 핵심 표현 습득",
       "materials": "패들렛, 교과서 71페이지",
       "activities": "질문 형성하기",
@@ -179,7 +179,7 @@
       "unitId": "beb8131c-53e7-5fd8-9727-fa374723a435",
       "sessionId": null,
       "createdAt": "2026-08-31T15:00:00Z",
-      "updatedAt": "2026-10-16T07:10:22Z"
+      "updatedAt": "2026-10-19T00:30:50.988Z"
     },
     {
       "id": "8d41f4d8-15ea-55ee-b5db-35433ec09bdd",
