@@ -1464,6 +1464,39 @@
       ],
       "createdAt": "2026-10-16T07:10:22Z",
       "updatedAt": "2026-10-16T07:10:22Z"
+    },
+    {
+      "id": "0a17ae84-17da-49c8-b1a9-5235d65e0ec0",
+      "title": "8. I'm happy.",
+      "grade": 3,
+      "subject": "영어",
+      "achievement": "감정이나 상태 표현하기(I'm ~~.) / 나이 묻고 답하기(How old are you?/I'm ~~ years old.)\n핵심단어 : happy. angry, hungry. sad. tired, six, seven, eight, nine, ten, birthday",
+      "design": "",
+      "notes": "",
+      "sessions": [
+        {
+          "id": "be723935-6d25-49fa-9439-1416f9eb826b",
+          "activity": "질문만들기"
+        },
+        {
+          "id": "760a87af-c347-45e8-abcf-a06fe7978854",
+          "activity": ""
+        },
+        {
+          "id": "3868745c-b0b9-45c2-8041-1aced0580cb6",
+          "activity": ""
+        },
+        {
+          "id": "e53ac2a9-3bb3-4c00-b7b8-160bf12271ec",
+          "activity": ""
+        },
+        {
+          "id": "d442de1d-f229-44da-afc1-98db84501b21",
+          "activity": ""
+        }
+      ],
+      "createdAt": "2026-10-19T23:43:33.868Z",
+      "updatedAt": "2026-10-19T23:45:14.550Z"
     }
   ]
 }
