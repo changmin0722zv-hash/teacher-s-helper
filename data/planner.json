@@ -1278,6 +1278,24 @@
       "sessionId": null,
       "createdAt": "2026-10-16T07:10:22Z",
       "updatedAt": "2026-10-19T00:31:11.648Z"
+    },
+    {
+      "id": "05989f1f-0ddb-432b-9973-572a713576e2",
+      "subject": "영어",
+      "date": "2026-10-19",
+      "title": "원어민 협력수업",
+      "grade": 6,
+      "classroom": "1",
+      "status": "계획 중",
+      "objective": "",
+      "materials": "",
+      "activities": "",
+      "feedback": "",
+      "notes": "",
+      "unitId": null,
+      "sessionId": null,
+      "createdAt": "2026-10-19T00:30:46.284Z",
+      "updatedAt": "2026-10-19T00:30:46.284Z"
     }
   ],
   "units": [
