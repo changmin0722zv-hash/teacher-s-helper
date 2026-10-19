@@ -23,14 +23,14 @@ export const STATUSES = [
   "수업 완료",
 ] as const;
 export const SUBJECT_COLORS: Record<string, string> = {
-  영어: "#568875",
-  국어: "#bc766c",
-  수학: "#718bc0",
-  사회: "#ae8a54",
-  과학: "#75a08b",
-  체육: "#d49c58",
-  음악: "#ac80aa",
-  미술: "#c98198",
+  영어: "#7ee2a8",
+  국어: "#ffa8a2",
+  수학: "#91bcff",
+  사회: "#eac788",
+  과학: "#80d8cf",
+  체육: "#ffc078",
+  음악: "#d5b0ff",
+  미술: "#f4a8cb",
 };
 const note = z.string().max(20000);
 const label = z.string().trim().min(1).max(160);

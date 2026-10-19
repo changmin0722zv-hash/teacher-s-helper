@@ -51,7 +51,7 @@ type Editor =
   | { kind: "lesson"; value: Lesson; fresh: boolean }
   | { kind: "unit"; value: Unit; fresh: boolean };
 const weekdays = ["일", "월", "화", "수", "목", "금", "토"];
-const color = (subject: string) => SUBJECT_COLORS[subject] || "#818a9f";
+const color = (subject: string) => SUBJECT_COLORS[subject] || "#b6c5dd";
 function download(data: unknown, name: string) {
   const url = URL.createObjectURL(
     new Blob([JSON.stringify(data, null, 2) + "\n"], {
