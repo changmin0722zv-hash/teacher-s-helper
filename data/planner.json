@@ -1296,6 +1296,24 @@
       "sessionId": null,
       "createdAt": "2026-10-19T03:14:59.376Z",
       "updatedAt": "2026-10-19T03:15:03.427Z"
+    },
+    {
+      "id": "6eab7827-48b9-41f4-87ae-c19b57d1364c",
+      "subject": "영어",
+      "date": "2026-10-20",
+      "title": "새로운 단원 새로운 차시",
+      "grade": 3,
+      "classroom": "5",
+      "status": "계획 중",
+      "objective": "도입 차시로 뭐하지 질문만들기?",
+      "materials": "배움공책",
+      "activities": "",
+      "feedback": "",
+      "notes": "",
+      "unitId": null,
+      "sessionId": null,
+      "createdAt": "2026-10-19T03:15:07.636Z",
+      "updatedAt": "2026-10-19T03:15:10.201Z"
     }
   ],
   "units": [
