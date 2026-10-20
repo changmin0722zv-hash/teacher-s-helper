@@ -1304,7 +1304,7 @@
       "title": "8단원 질문만들기 1차시",
       "grade": 3,
       "classroom": "4",
-      "status": "준비 완료",
+      "status": "수업 완료",
       "objective": "이번 단원에서 배울 표현에 대한 상황 맥락 생성하기",
       "materials": "배움공책",
       "activities": "감정 노래 듣고 상황 떠올리기 + 나이를 묻고 답하는데 필요한 상황 떠올리기 -> 영어 표현으로 바꾼다면? ",
@@ -1313,7 +1313,7 @@
       "unitId": null,
       "sessionId": null,
       "createdAt": "2026-10-19T23:43:06.150Z",
-      "updatedAt": "2026-10-19T23:43:17.237Z"
+      "updatedAt": "2026-10-20T03:25:08.458Z"
     }
   ],
   "units": [
