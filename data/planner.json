@@ -1316,31 +1316,6 @@
       "updatedAt": "2026-10-20T03:25:08.458Z"
     },
     {
-      "id": "b2134b47-764e-453d-9445-60e7439b3072",
-      "subject": "영어",
-      "date": "2026-10-21",
-      "title": "단원 도입, 핵심표현 연습",
-      "grade": 6,
-      "classroom": "1",
-      "status": "계획 중",
-      "objective": "핵심표현 공책 정리, 단원 테마 소개, 단원 목표 소개",
-      "materials": "",
-      "preparation": [
-        {
-          "id": "23689b8e-65e7-441a-8f05-cfc1e8605a3b",
-          "text": "핵심 표현 연습용 설명 PPT",
-          "done": false
-        }
-      ],
-      "activities": "단원 개관, 핵심 표현, 핵심 표현이 쓰이는 상황, 단원 마무리 활동까지의 생활 맥락을 활용한 테마소개, 핵심표현 공책 정리 후 블루킷 게임",
-      "feedback": "",
-      "notes": "",
-      "unitId": null,
-      "sessionId": null,
-      "createdAt": "2026-10-20T04:44:43.564Z",
-      "updatedAt": "2026-10-20T04:46:21.170Z"
-    },
-    {
       "id": "6450dea3-b56f-4a41-ac4d-7cf67264b118",
       "subject": "영어",
       "date": "2026-10-21",
@@ -1364,6 +1339,31 @@
       "sessionId": "c8245642-0f7f-41d9-966f-ee4b394c9eee",
       "createdAt": "2026-10-20T04:46:24.729Z",
       "updatedAt": "2026-10-20T04:46:31.162Z"
+    },
+    {
+      "id": "b2134b47-764e-453d-9445-60e7439b3072",
+      "subject": "영어",
+      "date": "2026-10-21",
+      "title": "단원 도입, 핵심표현 연습",
+      "grade": 6,
+      "classroom": "1",
+      "status": "계획 중",
+      "objective": "핵심표현 공책 정리, 단원 테마 소개, 단원 목표 소개",
+      "materials": "",
+      "preparation": [
+        {
+          "id": "23689b8e-65e7-441a-8f05-cfc1e8605a3b",
+          "text": "핵심 표현 연습용 설명 PPT",
+          "done": false
+        }
+      ],
+      "activities": "단원 개관, 핵심 표현, 핵심 표현이 쓰이는 상황, 단원 마무리 활동까지의 생활 맥락을 활용한 테마소개, 핵심표현 공책 정리 후 블루킷 게임",
+      "feedback": "",
+      "notes": "",
+      "unitId": "7cde333c-c57c-4679-841b-b943c7326aa5",
+      "sessionId": "c8245642-0f7f-41d9-966f-ee4b394c9eee",
+      "createdAt": "2026-10-20T04:44:43.564Z",
+      "updatedAt": "2026-10-20T04:46:37.793Z"
     }
   ],
   "units": [
