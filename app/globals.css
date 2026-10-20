@@ -23,7 +23,7 @@
   --text-lg: 1.25rem;
   --text-xl: 1.5rem;
   --text-2xl: 2rem;
-  --font: "Apple SD Gothic Neo", "Malgun Gothic", Arial, sans-serif;
+  --font: var(--font-pretendard), sans-serif;
 }
 * {
   box-sizing: border-box;
@@ -33,6 +33,7 @@ body {
   background: var(--paper);
   color: var(--ink);
   font-family: var(--font);
+  font-weight: 400;
   font-size: var(--text-sm);
   line-height: 1.65;
 }
@@ -51,6 +52,7 @@ textarea {
 }
 button {
   cursor: pointer;
+  font-weight: 500;
 }
 button:disabled {
   opacity: 0.45;
@@ -89,6 +91,11 @@ h2,
 h3,
 p {
   margin-top: 0;
+}
+h1,
+h2,
+h3 {
+  font-weight: 700;
 }
 button svg,
 a svg {
@@ -196,6 +203,7 @@ button:hover:not(:disabled) {
   gap: 7px;
 }
 .nav-item {
+  font-weight: 500;
   border: 0;
   background: none;
   text-align: left;
@@ -211,7 +219,7 @@ button:hover:not(:disabled) {
 .nav-item.active {
   background: var(--accent-soft);
   color: var(--accent);
-  font-weight: 700;
+  font-weight: 600;
 }
 .active-dot {
   width: 5px;
@@ -266,7 +274,7 @@ button:hover:not(:disabled) {
   display: grid;
   place-items: center;
   border-radius: 50%;
-  font-family: Georgia, serif;
+  font-family: var(--font);
   font-size: var(--text-md);
 }
 .profile > div {
@@ -449,7 +457,7 @@ button:hover:not(:disabled) {
 }
 .calendar-title h2 {
   font-size: var(--text-xl);
-  font-weight: 400;
+  font-weight: 700;
   letter-spacing: -0.7px;
   margin: 0 15px 0 0;
 }
@@ -718,7 +726,7 @@ button:hover:not(:disabled) {
 }
 .board-column h2 {
   font-size: var(--text-md);
-  font-weight: 600;
+  font-weight: 700;
   display: flex;
   align-items: center;
   gap: 8px;
@@ -776,7 +784,7 @@ button:hover:not(:disabled) {
 .lesson-card h3 {
   font-size: var(--text-md);
   line-height: 1.6;
-  font-weight: 600;
+  font-weight: 700;
   margin: 8px 0;
 }
 .lesson-card p {
@@ -919,7 +927,7 @@ button:hover:not(:disabled) {
 .empty-state h2 {
   font-size: var(--text-lg);
   color: var(--ink);
-  font-weight: 500;
+  font-weight: 700;
   margin: 9px 0;
 }
 .empty-state p {
@@ -1217,7 +1225,7 @@ td {
 .welcome-paper h2 {
   font-size: var(--text-2xl);
   line-height: 1.5;
-  font-weight: 500;
+  font-weight: 700;
   letter-spacing: -1px;
   margin: 19px 0 30px;
   color: var(--ink);
