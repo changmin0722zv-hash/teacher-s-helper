@@ -13,6 +13,7 @@ import {
 import {
   BookOpen,
   CalendarDays,
+  Sun,
   Columns3,
   ListChecks,
   Plus,
@@ -46,7 +47,19 @@ import {
   type Unit,
 } from "@/lib/planner";
 
-type View = "calendar" | "board" | "plans";
+import TodayDashboard, {
+  type QuickDraft,
+  type PreparationAction,
+} from "./today-dashboard";
+import { appendFeedback } from "@/lib/today";
+
+type View = "today" | "calendar" | "board" | "plans";
+const viewLabels: Record<View, string> = {
+  today: "오늘의 수업",
+  calendar: "수업 달력",
+  board: "준비상태 보드",
+  plans: "수업·단원 계획",
+};
 type Editor =
   | { kind: "lesson"; value: Lesson; fresh: boolean }
   | { kind: "unit"; value: Unit; fresh: boolean };
@@ -73,7 +86,7 @@ export default function PlannerApp({
   demo: boolean;
 }) {
   const [snapshot, setSnapshot] = useState<Snapshot | null>(null);
-  const [view, setView] = useState<View>("calendar");
+  const [view, setView] = useState<View>("today");
   const [planTab, setPlanTab] = useState<"lessons" | "units">("units");
   const [today, setToday] = useState(koreaToday);
   const [anchor, setAnchor] = useState(koreaToday);
@@ -83,6 +96,12 @@ export default function PlannerApp({
   const [classroom, setClassroom] = useState("");
   const [search, setSearch] = useState("");
   const [editor, setEditor] = useState<Editor | null>(null);
+  const [quickDrafts, setQuickDrafts] = useState<Record<string, QuickDraft>>(
+    {},
+  );
+  const hasQuickDrafts = Object.values(quickDrafts).some(
+    (draft) => draft.note || draft.preparation,
+  );
   const [dirty, setDirty] = useState(false);
   const [busy, setBusy] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -120,11 +139,11 @@ export default function PlannerApp({
   }, [editor]);
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
-      if (dirty || busy) e.preventDefault();
+      if (dirty || hasQuickDrafts || busy) e.preventDefault();
     };
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
-  }, [dirty, busy]);
+  }, [dirty, hasQuickDrafts, busy]);
 
   async function save(data: Planner): Promise<boolean> {
     if (!snapshot || saving.current || conflict) return false;
@@ -266,6 +285,70 @@ export default function PlannerApp({
       ),
     });
   }
+  function setQuickDraft(id: string, patch: Partial<QuickDraft>) {
+    setQuickDrafts((drafts) => ({
+      ...drafts,
+      [id]: { ...(drafts[id] || { note: "", preparation: "" }), ...patch },
+    }));
+  }
+  async function recordQuickly(id: string, complete: boolean) {
+    if (!snapshot || saving.current || conflict) return;
+    const current = snapshot.data.lessons.find((lesson) => lesson.id === id);
+    if (!current) return;
+    const addition = quickDrafts[id]?.note || "";
+    if (!addition.trim() && (!complete || current.status === "수업 완료"))
+      return;
+    const updated = {
+      ...current,
+      feedback: appendFeedback(current.feedback, addition),
+      status: complete ? ("수업 완료" as const) : current.status,
+      updatedAt: new Date().toISOString(),
+    };
+    if (
+      await save({
+        ...snapshot.data,
+        lessons: snapshot.data.lessons.map((lesson) =>
+          lesson.id === id ? updated : lesson,
+        ),
+      })
+    ) {
+      setQuickDraft(id, { note: "" });
+    }
+  }
+  async function updatePreparation(id: string, action: PreparationAction) {
+    if (!snapshot || saving.current || conflict) return;
+    const current = snapshot.data.lessons.find((lesson) => lesson.id === id);
+    if (!current) return;
+    let items = current.preparation || [];
+    if (action.kind === "add") {
+      if (!action.text.trim()) return;
+      items = [
+        ...items,
+        { id: crypto.randomUUID(), text: action.text.trim(), done: false },
+      ];
+    } else if (action.kind === "remove")
+      items = items.filter((item) => item.id !== action.id);
+    else
+      items = items.map((item) =>
+        item.id === action.id ? { ...item, done: action.done } : item,
+      );
+    if (
+      await save({
+        ...snapshot.data,
+        lessons: snapshot.data.lessons.map((lesson) =>
+          lesson.id === id
+            ? {
+                ...lesson,
+                preparation: items,
+                updatedAt: new Date().toISOString(),
+              }
+            : lesson,
+        ),
+      })
+    ) {
+      if (action.kind === "add") setQuickDraft(id, { preparation: "" });
+    }
+  }
   async function reload() {
     if (
       dirty &&
@@ -297,6 +380,10 @@ export default function PlannerApp({
         a.grade - b.grade ||
         a.classroom.localeCompare(b.classroom, "ko", { numeric: true }),
     );
+  const overviewLessons =
+    view === "today"
+      ? lessons.filter((lesson) => lesson.date === today)
+      : lessons;
   const units = (data?.units || []).filter(
     (u) =>
       (!subject || u.subject === subject) &&
@@ -379,6 +466,7 @@ export default function PlannerApp({
         <nav aria-label="주요 메뉴">
           {(
             [
+              { id: "today", label: "오늘의 수업", icon: Sun },
               { id: "calendar", label: "수업 달력", icon: CalendarDays },
               { id: "board", label: "준비상태 보드", icon: Columns3 },
               { id: "plans", label: "수업·단원 계획", icon: ListChecks },
@@ -387,6 +475,7 @@ export default function PlannerApp({
             <button
               key={item.id}
               className={view === item.id ? "nav-item active" : "nav-item"}
+              aria-current={view === item.id ? "page" : undefined}
               onClick={() => setView(item.id)}
             >
               <item.icon size={19} />
@@ -427,12 +516,7 @@ export default function PlannerApp({
       <div className="workspace">
         <header className="topbar">
           <span>
-            나의 작업실 <span className="slash">/</span>{" "}
-            {view === "calendar"
-              ? "수업 달력"
-              : view === "board"
-                ? "준비상태 보드"
-                : "수업·단원 계획"}
+            나의 작업실 <span className="slash">/</span> {viewLabels[view]}
           </span>
           <span className="private-tag">
             <span /> PRIVATE WORKSPACE
@@ -449,19 +533,17 @@ export default function PlannerApp({
             <div>
               <span className="eyebrow">A LITTLE PLAN, A BETTER CLASS</span>
               <h1>
-                {view === "calendar"
-                  ? "수업 달력"
-                  : view === "board"
-                    ? "준비상태 보드"
-                    : "수업·단원 계획"}
+                {viewLabels[view]}
                 <span className="heading-dot">.</span>
               </h1>
               <p>
-                {view === "calendar"
-                  ? "다가올 수업을 살펴보고, 나만의 속도로 준비해 보세요."
-                  : view === "board"
-                    ? "생각에서 준비로, 준비에서 수업으로. 한 걸음씩 이어가세요."
-                    : "단원의 큰 그림을 그리고, 한 차시씩 구체화해 보세요."}
+                {view === "today"
+                  ? "오늘 필요한 준비와 지난 메모를 살펴보고, 수업 후 짧게 기록하세요."
+                  : view === "calendar"
+                    ? "다가올 수업을 살펴보고, 나만의 속도로 준비해 보세요."
+                    : view === "board"
+                      ? "생각에서 준비로, 준비에서 수업으로. 한 걸음씩 이어가세요."
+                      : "단원의 큰 그림을 그리고, 한 차시씩 구체화해 보세요."}
               </p>
             </div>
             <button
@@ -474,21 +556,30 @@ export default function PlannerApp({
           </div>
           <section className="stats" aria-label="수업 현황">
             <Stat
-              label="등록한 수업"
-              value={lessons.length}
+              label={view === "today" ? "오늘의 수업" : "등록한 수업"}
+              value={overviewLessons.length}
               suffix="개"
-              detail="현재 필터 기준"
+              detail={
+                view === "today"
+                  ? today.replaceAll("-", ". ")
+                  : "현재 필터 기준"
+              }
             />
             <Stat
-              label="오늘의 수업"
-              value={lessons.filter((l) => l.date === today).length}
+              label={view === "today" ? "수업 완료" : "오늘의 수업"}
+              value={
+                view === "today"
+                  ? overviewLessons.filter((l) => l.status === "수업 완료")
+                      .length
+                  : lessons.filter((l) => l.date === today).length
+              }
               suffix="개"
               detail={today.replaceAll("-", ". ")}
             />
             <Stat
               label="준비 중인 수업"
               value={
-                lessons.filter(
+                overviewLessons.filter(
                   (l) => l.status === "계획 중" || l.status === "자료 준비 중",
                 ).length
               }
@@ -497,7 +588,9 @@ export default function PlannerApp({
             />
             <Stat
               label="준비 완료"
-              value={lessons.filter((l) => l.status === "준비 완료").length}
+              value={
+                overviewLessons.filter((l) => l.status === "준비 완료").length
+              }
               suffix="개"
               detail="수업을 기다리고 있어요"
             />
@@ -560,6 +653,30 @@ export default function PlannerApp({
               <RefreshCw size={17} className={loading ? "spin" : ""} />
             </button>
           </div>
+          {hasQuickDrafts && (
+            <div className="quick-draft-notice">
+              <span>
+                저장하지 않은 빠른 기록이 있어요. 화면 이동·최신 내용 불러오기
+                후에도 초안은 유지됩니다.
+              </span>
+              <button
+                className="button"
+                onClick={() =>
+                  download(
+                    {
+                      drafts: quickDrafts,
+                      lessons: data?.lessons.filter(
+                        (lesson) => quickDrafts[lesson.id],
+                      ),
+                    },
+                    `빠른기록-미저장-초안-${today}.json`,
+                  )
+                }
+              >
+                <Download size={16} /> 초안 내려받기
+              </button>
+            </div>
+          )}
           {!editor && errorBox}
           {notice && (
             <div className="notice" role="status">
@@ -580,6 +697,35 @@ export default function PlannerApp({
             </div>
           ) : (
             <>
+              {view === "today" && (
+                <TodayDashboard
+                  today={today}
+                  lessons={lessons}
+                  allLessons={data?.lessons || []}
+                  drafts={quickDrafts}
+                  blocked={busyOrMissing || conflict}
+                  busy={busy}
+                  filtered={!!(subject || grade || classroom || search)}
+                  onDraft={setQuickDraft}
+                  onRecord={recordQuickly}
+                  onPreparation={updatePreparation}
+                  onStatus={changeStatus}
+                  onOpen={(value) =>
+                    open({ kind: "lesson", value, fresh: false })
+                  }
+                  onCalendar={() => {
+                    setAnchor(today);
+                    setView("calendar");
+                  }}
+                  onAdd={() => beginLesson()}
+                  onClearFilters={() => {
+                    setSubject("");
+                    setGrade("");
+                    setClassroom("");
+                    setSearch("");
+                  }}
+                />
+              )}
               {view === "calendar" && (
                 <section className="calendar-panel">
                   <div className="calendar-toolbar">
@@ -1170,6 +1316,91 @@ export default function PlannerApp({
                         onChange={(materials) => editLesson({ materials })}
                         placeholder="교과서 쪽수, 활동지, 준비물, 참고 링크 등"
                       />
+                      <section
+                        className="wide preparation-editor"
+                        aria-label="준비 체크 편집"
+                      >
+                        <h3>준비 체크</h3>
+                        <ul className="today-checklist">
+                          {(lesson.preparation || []).map((item, index) => (
+                            <li key={item.id}>
+                              <div className="preparation-edit-row">
+                                <input
+                                  type="checkbox"
+                                  checked={item.done}
+                                  aria-label={`준비 항목 ${index + 1} 완료`}
+                                  onChange={(event) =>
+                                    editLesson({
+                                      preparation: lesson.preparation!.map(
+                                        (entry) =>
+                                          entry.id === item.id
+                                            ? {
+                                                ...entry,
+                                                done: event.target.checked,
+                                              }
+                                            : entry,
+                                      ),
+                                    })
+                                  }
+                                />
+                                <input
+                                  type="text"
+                                  required
+                                  maxLength={300}
+                                  value={item.text}
+                                  aria-label={`준비 항목 ${index + 1} 내용`}
+                                  onChange={(event) =>
+                                    editLesson({
+                                      preparation: lesson.preparation!.map(
+                                        (entry) =>
+                                          entry.id === item.id
+                                            ? {
+                                                ...entry,
+                                                text: event.target.value,
+                                              }
+                                            : entry,
+                                      ),
+                                    })
+                                  }
+                                />
+                              </div>
+                              <button
+                                type="button"
+                                className="icon-button"
+                                aria-label={`준비 항목 ${index + 1} 삭제`}
+                                onClick={() =>
+                                  editLesson({
+                                    preparation: lesson.preparation!.filter(
+                                      (entry) => entry.id !== item.id,
+                                    ),
+                                  })
+                                }
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                        <button
+                          type="button"
+                          className="button"
+                          disabled={(lesson.preparation?.length || 0) >= 100}
+                          onClick={() =>
+                            editLesson({
+                              preparation: [
+                                ...(lesson.preparation || []),
+                                {
+                                  id: crypto.randomUUID(),
+                                  text: "",
+                                  done: false,
+                                },
+                              ],
+                            })
+                          }
+                        >
+                          <Plus size={16} /> 준비 항목 추가
+                        </button>
+                      </section>
                       <TextField
                         label="활동"
                         value={lesson.activities}

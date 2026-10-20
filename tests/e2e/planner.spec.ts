@@ -91,6 +91,7 @@ test("unit to lesson, class copy, calendar, board, durable save and conflict pro
         .getByText(lessonTitle, { exact: true }),
     ).toBeVisible();
     await page.reload();
+    await page.getByRole("button", { name: "수업 달력", exact: true }).click();
     await expect(
       page.getByRole("button", { name: /영어 · 5-2/ }),
     ).toBeVisible();

@@ -57,6 +57,22 @@ export const lessonSchema = z
     status: z.enum(STATUSES),
     objective: note,
     materials: note,
+    preparation: z
+      .array(
+        z
+          .object({
+            id,
+            text: z.string().trim().min(1).max(300),
+            done: z.boolean(),
+          })
+          .strict(),
+      )
+      .max(100)
+      .refine(
+        (items) => new Set(items.map((item) => item.id)).size === items.length,
+        "준비 항목 ID가 중복되었습니다.",
+      )
+      .optional(),
     activities: note,
     feedback: note,
     notes: note,
@@ -182,6 +198,15 @@ export function copyLesson(source: Lesson): Lesson {
     id: crypto.randomUUID(),
     status: "계획 중",
     feedback: "",
+    ...(source.preparation
+      ? {
+          preparation: source.preparation.map((item) => ({
+            ...item,
+            id: crypto.randomUUID(),
+            done: false,
+          })),
+        }
+      : {}),
     createdAt: now,
     updatedAt: now,
   };
