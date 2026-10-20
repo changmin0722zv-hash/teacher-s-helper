@@ -1497,6 +1497,43 @@
       ],
       "createdAt": "2026-10-19T23:43:33.868Z",
       "updatedAt": "2026-10-20T02:20:39.766Z"
+    },
+    {
+      "id": "7cde333c-c57c-4679-841b-b943c7326aa5",
+      "title": "9단원 What are you going to do?",
+      "grade": 6,
+      "subject": "영어",
+      "achievement": "계획을 묻고 답하는 말(What are you going to do this ~~ ? / I'm going to ~~. / We're going to ~~.)\n동의하기(That's a good idea.)\n핵심 어휘 : any, child, forest, hamburger, plan, program, room, stay, tent, village, zoo",
+      "design": "생활 맥락과의 협치는 아직 안했음. 지피티 돌리고, 활동 구체화하기",
+      "notes": "",
+      "sessions": [
+        {
+          "id": "c8245642-0f7f-41d9-966f-ee4b394c9eee",
+          "activity": "핵심표현 도입"
+        },
+        {
+          "id": "9f93442f-7082-4c2a-bf3b-c2f0642f6993",
+          "activity": "듣고 말하며 핵심표현 연습하기"
+        },
+        {
+          "id": "be29cede-1495-47c2-a4ca-b3cf6b704f24",
+          "activity": "문장 완성하기, 문장 골라 대화하기, 인터뷰하기"
+        },
+        {
+          "id": "a7ff6374-10e2-4465-8b06-ad045f4ef017",
+          "activity": "주말 계획에 관한 글 읽기"
+        },
+        {
+          "id": "088decd4-b63c-44a8-9322-d29c0094193f",
+          "activity": "주말 계획에 관한 글 쓰기, 교차 검토, 피드백하기"
+        },
+        {
+          "id": "35d289f6-c00e-4388-9f6b-1dec857c69cb",
+          "activity": "단원 마무리 활동"
+        }
+      ],
+      "createdAt": "2026-10-20T02:26:29.334Z",
+      "updatedAt": "2026-10-20T02:34:00.222Z"
     }
   ]
 }
