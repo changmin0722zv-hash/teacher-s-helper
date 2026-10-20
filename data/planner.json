@@ -1280,24 +1280,6 @@
       "updatedAt": "2026-10-19T00:31:11.648Z"
     },
     {
-      "id": "2aa2c0ca-9c8b-44a1-8317-318f49989ee9",
-      "subject": "영어",
-      "date": "2026-10-20",
-      "title": "8단원 질문만들기 1차시",
-      "grade": 3,
-      "classroom": "4",
-      "status": "수업 완료",
-      "objective": "이번 단원에서 배울 표현에 대한 상황 맥락 생성하기",
-      "materials": "배움공책",
-      "activities": "감정 노래 듣고 상황 떠올리기 + 나이를 묻고 답하는데 필요한 상황 떠올리기 -> 영어 표현으로 바꾼다면? ",
-      "feedback": "",
-      "notes": "",
-      "unitId": null,
-      "sessionId": null,
-      "createdAt": "2026-10-19T03:14:59.376Z",
-      "updatedAt": "2026-10-20T03:25:12.590Z"
-    },
-    {
       "id": "73be6494-7de3-4a17-999e-b09f349a9f10",
       "subject": "영어",
       "date": "2026-10-20",
@@ -1382,6 +1364,24 @@
       "sessionId": null,
       "createdAt": "2026-10-20T04:46:52.626Z",
       "updatedAt": "2026-10-20T04:47:04.334Z"
+    },
+    {
+      "id": "2aa2c0ca-9c8b-44a1-8317-318f49989ee9",
+      "subject": "영어",
+      "date": "2026-10-20",
+      "title": "8단원 질문만들기 1차시",
+      "grade": 3,
+      "classroom": "5",
+      "status": "수업 완료",
+      "objective": "이번 단원에서 배울 표현에 대한 상황 맥락 생성하기",
+      "materials": "배움공책",
+      "activities": "감정 노래 듣고 상황 떠올리기 + 나이를 묻고 답하는데 필요한 상황 떠올리기 -> 영어 표현으로 바꾼다면? ",
+      "feedback": "",
+      "notes": "",
+      "unitId": null,
+      "sessionId": null,
+      "createdAt": "2026-10-19T03:14:59.376Z",
+      "updatedAt": "2026-10-20T04:47:12.178Z"
     }
   ],
   "units": [
