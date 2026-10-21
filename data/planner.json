@@ -1400,6 +1400,24 @@
       "sessionId": null,
       "createdAt": "2026-10-20T04:47:17.567Z",
       "updatedAt": "2026-10-21T03:24:47.678Z"
+    },
+    {
+      "id": "1e946f4f-5905-41e7-9201-616b5555012e",
+      "subject": "영어",
+      "date": "2026-10-22",
+      "title": "8단원 질문만들기 1차시",
+      "grade": 3,
+      "classroom": "1",
+      "status": "준비 완료",
+      "objective": "이번 단원에서 배울 표현에 대한 상황 맥락 생성하기",
+      "materials": "배움공책",
+      "activities": "감정 노래 듣고 상황 떠올리기 + 나이를 묻고 답하는데 필요한 상황 떠올리기 -> 영어 표현으로 바꾼다면? ",
+      "feedback": "",
+      "notes": "",
+      "unitId": null,
+      "sessionId": null,
+      "createdAt": "2026-10-21T03:27:12.480Z",
+      "updatedAt": "2026-10-21T03:27:22.289Z"
     }
   ],
   "units": [
