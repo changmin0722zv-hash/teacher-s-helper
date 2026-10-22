@@ -1803,6 +1803,17 @@
       "title": "",
       "startDate": "2026-10-23",
       "endDate": "2027-02-12"
+    },
+    {
+      "id": "fdf426fd-b1f3-4b08-b98c-13614fe81a5f",
+      "weekday": 2,
+      "period": 2,
+      "grade": 6,
+      "classroom": "4",
+      "subject": "영어",
+      "title": "",
+      "startDate": "2026-10-23",
+      "endDate": "2027-02-12"
     }
   ]
 }
