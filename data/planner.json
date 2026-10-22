@@ -1769,5 +1769,18 @@
       "createdAt": "2026-10-20T02:26:29.334Z",
       "updatedAt": "2026-10-20T02:34:00.222Z"
     }
+  ],
+  "timetable": [
+    {
+      "id": "77eeef2d-9c12-47cc-8c3b-f40783fa311e",
+      "weekday": 1,
+      "period": 2,
+      "grade": 6,
+      "classroom": "1",
+      "subject": "영어",
+      "title": "",
+      "startDate": "2026-10-23",
+      "endDate": "2027-02-12"
+    }
   ]
 }
