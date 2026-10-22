@@ -1913,6 +1913,17 @@
       "title": "",
       "startDate": "2026-10-23",
       "endDate": "2027-02-12"
+    },
+    {
+      "id": "35f3a189-847d-48a9-8391-5b314be57ee3",
+      "weekday": 5,
+      "period": 1,
+      "grade": 3,
+      "classroom": "1",
+      "subject": "영어",
+      "title": "",
+      "startDate": "2026-10-23",
+      "endDate": "2027-02-12"
     }
   ]
 }
