@@ -39,7 +39,7 @@ Vercel 프로젝트의 **Settings → Environment Variables**에서 아래 항�
 | `APP_URL`                | 고정 운영 주소. HTTPS이며 경로를 붙이지 않음      |
 | `GITHUB_CLIENT_ID`       | OAuth App의 Client ID                             |
 | `GITHUB_CLIENT_SECRET`   | OAuth App의 Client Secret. 민감정보로 저장        |
-| `GITHUB_ALLOWED_USER_ID` | `342810672` (현재 저장소 소유자 계정)                      |
+| `GITHUB_ALLOWED_USER_ID` | `342810672` (현재 저장소 소유자 계정)             |
 | `SESSION_SECRET`         | 충분히 긴 임의 문자열, 최소 32자. 민감정보로 저장 |
 | `GITHUB_OWNER`           | `changmin0722zv-hash`                             |
 | `GITHUB_REPO`            | `teacher-s-helper`                                |
@@ -73,3 +73,12 @@ node -e "console.log(require('node:crypto').randomBytes(32).toString('hex'))"
 - **로그인 만료:** 로그인은 8시간 유지됩니다. 다시 로그인합니다.
 
 클라우드 개발 환경에서 실제 GitHub API를 호출하려면 `github.com`과 `api.github.com` 접근이 필요합니다. Git 프록시를 통한 저장소 읽기가 된다고 OAuth·GitHub API 연결까지 되는 것은 아닙니다.
+
+## 학교 행사 API 연결 (선택)
+
+1. [나이스 교육정보 개방 포털](https://open.neis.go.kr/portal/guide/apiGuidePage.do)에서 로그인 후 인증키를 발급받습니다.
+2. Vercel → teacher-s-helper → Settings → Environment Variables에서 `NEIS_API_KEY`를 만들고 발급받은 키를 Value로 저장합니다. Production 환경을 선택합니다.
+3. 재배포 후 로그인한 앱의 ‘학교·기초시간표’에서 ‘학교 일정 새로고침’을 누릅니다.
+4. 연결 성공 시 ‘최근 확인’ 시각이 나타납니다. 실제 학교 행사와 날짜·대상 학년을 대조합니다. 빈 응답과 연결 실패는 별도로 표시됩니다.
+
+인증키는 서버에서만 사용합니다. 학교 일정 API도 기존 로그인이 필요하며 키나 원본 요청 URL을 응답에 노출하지 않습니다. 외부 인증키가 없는 자동화 테스트는 나이스 응답을 모의 처리하므로 실제 인증키 연결 성공을 보장하지 않습니다. 초기 연결 전에도 기초시간표·주별 일괄 등록을 사용할 수 있습니다.

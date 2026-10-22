@@ -28,6 +28,7 @@ import {
   Check,
   LogOut,
   Layers3,
+  Settings2,
 } from "lucide-react";
 import {
   copyLesson,
@@ -45,6 +46,7 @@ import {
   type Planner,
   type Snapshot,
   type Unit,
+  type TimetableSlot,
 } from "@/lib/planner";
 
 import TodayDashboard, {
@@ -53,12 +55,22 @@ import TodayDashboard, {
 } from "./today-dashboard";
 import { appendFeedback } from "@/lib/today";
 
-type View = "today" | "calendar" | "board" | "plans";
+import TimetableSettings from "./timetable-settings";
+import {
+  useSchoolEvents,
+  SchoolSyncBar,
+  SchoolEventList,
+} from "./school-events";
+import { eventsFor } from "@/lib/school";
+import { mondayOf, weekCandidates, lessonsFromWeek } from "@/lib/timetable";
+
+type View = "today" | "calendar" | "board" | "plans" | "timetable";
 const viewLabels: Record<View, string> = {
   today: "오늘의 수업",
   calendar: "수업 달력",
   board: "준비상태 보드",
   plans: "수업·단원 계획",
+  timetable: "학교·기초시간표",
 };
 type Editor =
   | { kind: "lesson"; value: Lesson; fresh: boolean }
@@ -90,6 +102,19 @@ export default function PlannerApp({
   const [planTab, setPlanTab] = useState<"lessons" | "units">("units");
   const [today, setToday] = useState(koreaToday);
   const [anchor, setAnchor] = useState(koreaToday);
+  const [timetableWeek, setTimetableWeek] = useState(koreaToday);
+  const [slotDraft, setSlotDraft] = useState<TimetableSlot | null>(null);
+  const [showSchoolEvents, setShowSchoolEvents] = useState(true);
+  const schoolAnchor =
+    view === "timetable"
+      ? mondayOf(timetableWeek)
+      : view === "calendar"
+        ? anchor.slice(0, 7) + "-01"
+        : today;
+  const schoolSync = useSchoolEvents(
+    shiftDate(schoolAnchor, -6),
+    shiftDate(schoolAnchor, 42),
+  );
   const [calendarMode, setCalendarMode] = useState<"month" | "week">("month");
   const [subject, setSubject] = useState("");
   const [grade, setGrade] = useState("");
@@ -139,11 +164,11 @@ export default function PlannerApp({
   }, [editor]);
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
-      if (dirty || hasQuickDrafts || busy) e.preventDefault();
+      if (dirty || hasQuickDrafts || slotDraft || busy) e.preventDefault();
     };
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
-  }, [dirty, hasQuickDrafts, busy]);
+  }, [dirty, hasQuickDrafts, slotDraft, busy]);
 
   async function save(data: Planner): Promise<boolean> {
     if (!snapshot || saving.current || conflict) return false;
@@ -349,6 +374,48 @@ export default function PlannerApp({
       if (action.kind === "add") setQuickDraft(id, { preparation: "" });
     }
   }
+  async function saveSlot(slot: TimetableSlot) {
+    if (!snapshot || saving.current || conflict) return;
+    const slots = snapshot.data.timetable || [];
+    const timetable = slots.some((s) => s.id === slot.id)
+      ? slots.map((s) => (s.id === slot.id ? slot : s))
+      : [...slots, slot];
+    if (await save({ ...snapshot.data, timetable })) setSlotDraft(null);
+  }
+  async function deleteSlot(id: string) {
+    if (!snapshot || saving.current || conflict) return;
+    await save({
+      ...snapshot.data,
+      timetable: (snapshot.data.timetable || []).filter((s) => s.id !== id),
+    });
+  }
+  async function registerWeek(selected: string[]) {
+    if (
+      !snapshot ||
+      saving.current ||
+      conflict ||
+      slotDraft ||
+      schoolSync.loading
+    )
+      return;
+    const candidates = weekCandidates(
+      snapshot.data.timetable || [],
+      timetableWeek,
+      snapshot.data.lessons,
+      schoolSync.events,
+    );
+    const additions = lessonsFromWeek(candidates, selected);
+    if (!additions.length) return;
+    if (
+      await save({
+        ...snapshot.data,
+        lessons: [...snapshot.data.lessons, ...additions],
+      })
+    )
+      setNotice(
+        `${additions.length}개 수업을 등록했습니다. 달력에서 각 수업의 제목·날짜·내용을 수정할 수 있어요.`,
+      );
+  }
   async function reload() {
     if (
       dirty &&
@@ -377,6 +444,7 @@ export default function PlannerApp({
     .sort(
       (a, b) =>
         a.date.localeCompare(b.date) ||
+        (a.period ?? 99) - (b.period ?? 99) ||
         a.grade - b.grade ||
         a.classroom.localeCompare(b.classroom, "ko", { numeric: true }),
     );
@@ -470,6 +538,7 @@ export default function PlannerApp({
               { id: "calendar", label: "수업 달력", icon: CalendarDays },
               { id: "board", label: "준비상태 보드", icon: Columns3 },
               { id: "plans", label: "수업·단원 계획", icon: ListChecks },
+              { id: "timetable", label: "학교·기초시간표", icon: Settings2 },
             ] as const
           ).map((item) => (
             <button
@@ -537,13 +606,15 @@ export default function PlannerApp({
                 <span className="heading-dot">.</span>
               </h1>
               <p>
-                {view === "today"
-                  ? "오늘 필요한 준비와 지난 메모를 살펴보고, 수업 후 짧게 기록하세요."
-                  : view === "calendar"
-                    ? "다가올 수업을 살펴보고, 나만의 속도로 준비해 보세요."
-                    : view === "board"
-                      ? "생각에서 준비로, 준비에서 수업으로. 한 걸음씩 이어가세요."
-                      : "단원의 큰 그림을 그리고, 한 차시씩 구체화해 보세요."}
+                {view === "timetable"
+                  ? "학교 일정을 확인하고, 기초시간표로 한 주의 수업을 준비하세요."
+                  : view === "today"
+                    ? "오늘 필요한 준비와 지난 메모를 살펴보고, 수업 후 짧게 기록하세요."
+                    : view === "calendar"
+                      ? "다가올 수업을 살펴보고, 나만의 속도로 준비해 보세요."
+                      : view === "board"
+                        ? "생각에서 준비로, 준비에서 수업으로. 한 걸음씩 이어가세요."
+                        : "단원의 큰 그림을 그리고, 한 차시씩 구체화해 보세요."}
               </p>
             </div>
             <button
@@ -554,105 +625,131 @@ export default function PlannerApp({
               <Plus size={18} /> 수업 계획 추가
             </button>
           </div>
-          <section className="stats" aria-label="수업 현황">
-            <Stat
-              label={view === "today" ? "오늘의 수업" : "등록한 수업"}
-              value={overviewLessons.length}
-              suffix="개"
-              detail={
-                view === "today"
-                  ? today.replaceAll("-", ". ")
-                  : "현재 필터 기준"
-              }
-            />
-            <Stat
-              label={view === "today" ? "수업 완료" : "오늘의 수업"}
-              value={
-                view === "today"
-                  ? overviewLessons.filter((l) => l.status === "수업 완료")
+          {view !== "timetable" && (
+            <>
+              <section className="stats" aria-label="수업 현황">
+                <Stat
+                  label={view === "today" ? "오늘의 수업" : "등록한 수업"}
+                  value={overviewLessons.length}
+                  suffix="개"
+                  detail={
+                    view === "today"
+                      ? today.replaceAll("-", ". ")
+                      : "현재 필터 기준"
+                  }
+                />
+                <Stat
+                  label={view === "today" ? "수업 완료" : "오늘의 수업"}
+                  value={
+                    view === "today"
+                      ? overviewLessons.filter((l) => l.status === "수업 완료")
+                          .length
+                      : lessons.filter((l) => l.date === today).length
+                  }
+                  suffix="개"
+                  detail={today.replaceAll("-", ". ")}
+                />
+                <Stat
+                  label="준비 중인 수업"
+                  value={
+                    overviewLessons.filter(
+                      (l) =>
+                        l.status === "계획 중" || l.status === "자료 준비 중",
+                    ).length
+                  }
+                  suffix="개"
+                  detail="차근차근 준비해요"
+                />
+                <Stat
+                  label="준비 완료"
+                  value={
+                    overviewLessons.filter((l) => l.status === "준비 완료")
                       .length
-                  : lessons.filter((l) => l.date === today).length
-              }
-              suffix="개"
-              detail={today.replaceAll("-", ". ")}
-            />
-            <Stat
-              label="준비 중인 수업"
-              value={
-                overviewLessons.filter(
-                  (l) => l.status === "계획 중" || l.status === "자료 준비 중",
-                ).length
-              }
-              suffix="개"
-              detail="차근차근 준비해요"
-            />
-            <Stat
-              label="준비 완료"
-              value={
-                overviewLessons.filter((l) => l.status === "준비 완료").length
-              }
-              suffix="개"
-              detail="수업을 기다리고 있어요"
-            />
-          </section>
-          <div className="filter-bar">
-            <div className="filters">
-              <select
-                aria-label="교과 필터"
-                value={subject}
-                onChange={(e) => setSubject(e.target.value)}
+                  }
+                  suffix="개"
+                  detail="수업을 기다리고 있어요"
+                />
+              </section>
+              <div className="filter-bar">
+                <div className="filters">
+                  <select
+                    aria-label="교과 필터"
+                    value={subject}
+                    onChange={(e) => setSubject(e.target.value)}
+                  >
+                    <option value="">모든 교과</option>
+                    {allSubjects.map((s) => (
+                      <option key={s}>{s}</option>
+                    ))}
+                  </select>
+                  <select
+                    aria-label="학년 필터"
+                    value={grade}
+                    onChange={(e) => {
+                      setGrade(e.target.value);
+                      setClassroom("");
+                    }}
+                  >
+                    <option value="">모든 학년</option>
+                    {[1, 2, 3, 4, 5, 6].map((g) => (
+                      <option key={g} value={g}>
+                        {g}학년
+                      </option>
+                    ))}
+                  </select>
+                  <select
+                    aria-label="학반 필터"
+                    value={classroom}
+                    onChange={(e) => setClassroom(e.target.value)}
+                    disabled={view === "plans" && planTab === "units"}
+                  >
+                    <option value="">모든 학반</option>
+                    {classes.map((c) => (
+                      <option key={c} value={c}>
+                        {c}반
+                      </option>
+                    ))}
+                  </select>
+                  <input
+                    className="search"
+                    aria-label="계획 검색"
+                    placeholder="계획 검색…"
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                  />
+                </div>
+                <button
+                  className="icon-button"
+                  aria-label="최신 내용 불러오기"
+                  title="Codex에서 수정한 내용 불러오기"
+                  disabled={busyOrMissing}
+                  onClick={() => void reload()}
+                >
+                  <RefreshCw size={17} className={loading ? "spin" : ""} />
+                </button>
+              </div>
+            </>
+          )}
+          {view === "timetable" && (
+            <div className="timetable-reload">
+              <button
+                className="button"
+                disabled={busyOrMissing}
+                onClick={() => void reload()}
               >
-                <option value="">모든 교과</option>
-                {allSubjects.map((s) => (
-                  <option key={s}>{s}</option>
-                ))}
-              </select>
-              <select
-                aria-label="학년 필터"
-                value={grade}
-                onChange={(e) => {
-                  setGrade(e.target.value);
-                  setClassroom("");
-                }}
-              >
-                <option value="">모든 학년</option>
-                {[1, 2, 3, 4, 5, 6].map((g) => (
-                  <option key={g} value={g}>
-                    {g}학년
-                  </option>
-                ))}
-              </select>
-              <select
-                aria-label="학반 필터"
-                value={classroom}
-                onChange={(e) => setClassroom(e.target.value)}
-                disabled={view === "plans" && planTab === "units"}
-              >
-                <option value="">모든 학반</option>
-                {classes.map((c) => (
-                  <option key={c} value={c}>
-                    {c}반
-                  </option>
-                ))}
-              </select>
-              <input
-                className="search"
-                aria-label="계획 검색"
-                placeholder="계획 검색…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-              />
+                <RefreshCw size={17} /> 최신 내용 불러오기
+              </button>
+              <span>다른 기기에서 저장한 시간표와 수업을 불러옵니다.</span>
             </div>
-            <button
-              className="icon-button"
-              aria-label="최신 내용 불러오기"
-              title="Codex에서 수정한 내용 불러오기"
-              disabled={busyOrMissing}
-              onClick={() => void reload()}
-            >
-              <RefreshCw size={17} className={loading ? "spin" : ""} />
-            </button>
-          </div>
+          )}
+          {slotDraft && view !== "timetable" && (
+            <div className="quick-draft-notice">
+              <span>저장하지 않은 기초시간표 편집 내용이 있어요.</span>
+              <button className="button" onClick={() => setView("timetable")}>
+                시간표 편집 이어가기
+              </button>
+            </div>
+          )}
           {hasQuickDrafts && (
             <div className="quick-draft-notice">
               <span>
@@ -697,6 +794,44 @@ export default function PlannerApp({
             </div>
           ) : (
             <>
+              {["today", "calendar", "timetable"].includes(view) && (
+                <SchoolSyncBar
+                  sync={schoolSync}
+                  visible={showSchoolEvents}
+                  onToggle={() => setShowSchoolEvents((value) => !value)}
+                />
+              )}
+              {view === "timetable" && (
+                <TimetableSettings
+                  data={snapshot.data}
+                  week={timetableWeek}
+                  onWeek={setTimetableWeek}
+                  sync={schoolSync}
+                  blocked={busyOrMissing || conflict}
+                  busy={busy}
+                  draft={slotDraft}
+                  onDraft={setSlotDraft}
+                  onSaveSlot={saveSlot}
+                  onDeleteSlot={deleteSlot}
+                  onRegister={registerWeek}
+                  onCalendar={() => {
+                    setAnchor(timetableWeek);
+                    setCalendarMode("week");
+                    setView("calendar");
+                  }}
+                />
+              )}
+              {view === "today" && showSchoolEvents && (
+                <div className="today-school-events">
+                  <SchoolEventList
+                    events={eventsFor(
+                      schoolSync.events,
+                      today,
+                      grade ? Number(grade) : undefined,
+                    )}
+                  />
+                </div>
+              )}
               {view === "today" && (
                 <TodayDashboard
                   today={today}
@@ -772,6 +907,19 @@ export default function PlannerApp({
                       </button>
                     </div>
                   </div>
+                  <div className="calendar-batch-action">
+                    <button
+                      className="button"
+                      disabled={busyOrMissing}
+                      onClick={() => {
+                        setTimetableWeek(anchor);
+                        setView("timetable");
+                      }}
+                    >
+                      시간표로 주간 등록
+                    </button>
+                    <span>기초시간표에서 필요한 수업을 선택해 등록하세요.</span>
+                  </div>
                   <div className="calendar-grid weekdays">
                     {weekdays.map((day, i) => (
                       <div
@@ -807,6 +955,15 @@ export default function PlannerApp({
                             <Plus size={14} />
                           </button>
                         </div>
+                        {showSchoolEvents && (
+                          <SchoolEventList
+                            events={eventsFor(
+                              schoolSync.events,
+                              date,
+                              grade ? Number(grade) : undefined,
+                            )}
+                          />
+                        )}
                         {lessons
                           .filter((l) => l.date === date)
                           .map((l) => (
@@ -824,6 +981,7 @@ export default function PlannerApp({
                             >
                               <span className="event-meta">
                                 {l.subject} · {l.grade}-{l.classroom}
+                                {l.period ? ` · ${l.period}교시` : ""}
                                 {l.status === "준비 완료" && (
                                   <Check size={12} />
                                 )}
@@ -1207,6 +1365,25 @@ export default function PlannerApp({
                           value={lesson.date}
                           onChange={(e) => editLesson({ date: e.target.value })}
                         />
+                      </Field>
+                      <Field label="교시 (선택)">
+                        <select
+                          value={lesson.period || ""}
+                          onChange={(e) =>
+                            editLesson({
+                              period: e.target.value
+                                ? Number(e.target.value)
+                                : undefined,
+                            })
+                          }
+                        >
+                          <option value="">교시 미지정</option>
+                          {Array.from({ length: 12 }, (_, i) => (
+                            <option key={i} value={i + 1}>
+                              {i + 1}교시
+                            </option>
+                          ))}
+                        </select>
                       </Field>
                       <Field label="학반 *">
                         <div className="input-suffix">

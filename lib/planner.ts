@@ -46,11 +46,61 @@ export const dateSchema = z
   }, "실제 달력에 있는 날짜를 입력해 주세요.");
 const grade = z.number().int().min(1).max(6);
 const timestamp = z.string().datetime();
+export const timetableSlotSchema = z
+  .object({
+    id,
+    weekday: z.number().int().min(1).max(5),
+    period: z.number().int().min(1).max(12),
+    grade,
+    classroom: z.string().trim().min(1).max(40),
+    subject: label,
+    title: z.string().trim().max(160),
+    startDate: dateSchema,
+    endDate: dateSchema.nullable(),
+  })
+  .strict()
+  .refine(
+    (slot) => !slot.endDate || slot.endDate >= slot.startDate,
+    "종료일은 시작일 이후여야 합니다.",
+  );
+export const timetableSchema = z
+  .array(timetableSlotSchema)
+  .max(300)
+  .superRefine((slots, ctx) => {
+    if (new Set(slots.map((s) => s.id)).size !== slots.length)
+      ctx.addIssue({
+        code: "custom",
+        message: "시간표 항목 ID가 중복되었습니다.",
+      });
+    for (let i = 0; i < slots.length; i++)
+      for (let j = i + 1; j < slots.length; j++) {
+        const a = slots[i],
+          b = slots[j];
+        if (
+          a.weekday === b.weekday &&
+          a.period === b.period &&
+          a.startDate <= (b.endDate || "9999-12-31") &&
+          b.startDate <= (a.endDate || "9999-12-31")
+        ) {
+          ctx.addIssue({
+            code: "custom",
+            message: "같은 요일·교시에 적용 기간이 겹치는 수업이 있습니다.",
+          });
+          return;
+        }
+      }
+  });
+export type TimetableSlot = z.infer<typeof timetableSlotSchema>;
 export const lessonSchema = z
   .object({
     id,
     subject: label,
     date: dateSchema,
+    period: z.number().int().min(1).max(12).optional(),
+    timetableOrigin: z
+      .object({ slotId: id, date: dateSchema })
+      .strict()
+      .optional(),
     title: label,
     grade,
     classroom: z.string().trim().min(1).max(40),
@@ -104,9 +154,20 @@ export const plannerSchema = z
     schemaVersion: z.literal(1),
     lessons: z.array(lessonSchema).max(10000),
     units: z.array(unitSchema).max(1000),
+    timetable: timetableSchema.optional(),
   })
   .strict()
   .superRefine((data, ctx) => {
+    const origins = data.lessons.flatMap((l) =>
+      l.timetableOrigin
+        ? [`${l.timetableOrigin.slotId}:${l.timetableOrigin.date}`]
+        : [],
+    );
+    if (new Set(origins).size !== origins.length)
+      ctx.addIssue({
+        code: "custom",
+        message: "같은 시간표 수업이 중복 등록되었습니다.",
+      });
     const ids = [
       ...data.lessons.map((x) => x.id),
       ...data.units.map((x) => x.id),
@@ -195,6 +256,7 @@ export function copyLesson(source: Lesson): Lesson {
   const now = new Date().toISOString();
   return {
     ...source,
+    timetableOrigin: undefined,
     id: crypto.randomUUID(),
     status: "계획 중",
     feedback: "",

@@ -129,6 +129,7 @@ function TodayLessonCard({
             style={{ color: SUBJECT_COLORS[lesson.subject] || "#b6c5dd" }}
           >
             {lesson.subject} · {lesson.grade}학년 {lesson.classroom}반
+            {lesson.period ? ` · ${lesson.period}교시` : ""}
           </span>
           <h2 id={`today-title-${lesson.id}`}>{lesson.title}</h2>
           <span

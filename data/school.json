@@ -1,0 +1,11 @@
+{
+  "name": "오션초등학교",
+  "educationOffice": "부산광역시교육청",
+  "districtOffice": "부산광역시북부교육지원청",
+  "officeCode": "C10",
+  "schoolCode": "7201223",
+  "address": "부산광역시 강서구 명지오션시티6로 72",
+  "website": "https://school.busanedu.net/ocean-e/main.do",
+  "verifiedAt": "2026-10-21",
+  "source": "https://open.neis.go.kr/hub/schoolInfo?Type=json&SCHUL_NM=%EC%98%A4%EC%85%98%EC%B4%88%EB%93%B1%ED%95%99%EA%B5%90"
+}
