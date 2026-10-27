@@ -1550,29 +1550,6 @@
       "updatedAt": "2026-10-23T03:07:58.543Z"
     },
     {
-      "id": "ce14a8fa-7611-42ad-8c86-367accc0a012",
-      "subject": "영어",
-      "date": "2026-10-28",
-      "period": 2,
-      "timetableOrigin": {
-        "slotId": "dc389bfa-516e-4678-a9f4-71594e4ee72c",
-        "date": "2026-10-28"
-      },
-      "title": "영어 수업",
-      "grade": 3,
-      "classroom": "2",
-      "status": "계획 중",
-      "objective": "",
-      "materials": "",
-      "activities": "",
-      "feedback": "",
-      "notes": "",
-      "unitId": null,
-      "sessionId": null,
-      "createdAt": "2026-10-22T23:48:27.301Z",
-      "updatedAt": "2026-10-22T23:48:27.301Z"
-    },
-    {
       "id": "d182bf6c-249d-44ce-9d3b-45231ee1f003",
       "subject": "영어",
       "date": "2026-10-28",
