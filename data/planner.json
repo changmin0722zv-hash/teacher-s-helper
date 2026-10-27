@@ -1916,6 +1916,25 @@
       "sessionId": "3868745c-b0b9-45c2-8041-1aced0580cb6",
       "createdAt": "2026-10-22T23:48:27.301Z",
       "updatedAt": "2026-10-27T07:04:03.473Z"
+    },
+    {
+      "id": "d4c043d1-985d-40b1-a14c-f055a1a65dca",
+      "subject": "영어",
+      "date": "2026-10-27",
+      "period": 2,
+      "title": "영어 수업",
+      "grade": 3,
+      "classroom": "4",
+      "status": "수업 완료",
+      "objective": "핵심표현 듣고 말하기",
+      "materials": "공책, 깜빡이 PPT, 게임용 웹앱, 블루킷",
+      "activities": "가볍게 도입, 깜빡이로 핵심표현 듣고 말하기 연습, 웹앱으로 표현 말하기 게임, 블루킷으로 읽기 게임",
+      "feedback": "",
+      "notes": "",
+      "unitId": "0a17ae84-17da-49c8-b1a9-5235d65e0ec0",
+      "sessionId": "3868745c-b0b9-45c2-8041-1aced0580cb6",
+      "createdAt": "2026-10-27T07:04:18.968Z",
+      "updatedAt": "2026-10-27T07:04:33.050Z"
     }
   ],
   "units": [
