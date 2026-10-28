@@ -1795,25 +1795,6 @@
       "updatedAt": "2026-10-27T07:05:56.025Z"
     },
     {
-      "id": "5944165b-a96b-45e8-86f8-534c4fcdd8b2",
-      "subject": "영어",
-      "date": "2026-10-28",
-      "period": 2,
-      "title": "영어 수업",
-      "grade": 3,
-      "classroom": "2",
-      "status": "준비 완료",
-      "objective": "핵심표현 듣고 말하기",
-      "materials": "공책, 깜빡이 PPT, 게임용 웹앱, 블루킷",
-      "activities": "가볍게 도입, 깜빡이로 핵심표현 듣고 말하기 연습, 웹앱으로 표현 말하기 게임, 블루킷으로 읽기 게임",
-      "feedback": "",
-      "notes": "",
-      "unitId": "0a17ae84-17da-49c8-b1a9-5235d65e0ec0",
-      "sessionId": "3868745c-b0b9-45c2-8041-1aced0580cb6",
-      "createdAt": "2026-10-27T07:06:10.893Z",
-      "updatedAt": "2026-10-27T07:06:22.122Z"
-    },
-    {
       "id": "d182bf6c-249d-44ce-9d3b-45231ee1f003",
       "subject": "영어",
       "date": "2026-10-28",
@@ -1854,6 +1835,25 @@
       "sessionId": "a7ff6374-10e2-4465-8b06-ad045f4ef017",
       "createdAt": "2026-10-28T04:31:34.963Z",
       "updatedAt": "2026-10-28T04:34:07.373Z"
+    },
+    {
+      "id": "5944165b-a96b-45e8-86f8-534c4fcdd8b2",
+      "subject": "영어",
+      "date": "2026-10-28",
+      "period": 2,
+      "title": "영어 수업",
+      "grade": 3,
+      "classroom": "2",
+      "status": "수업 완료",
+      "objective": "핵심표현 듣고 말하기",
+      "materials": "공책, 깜빡이 PPT, 게임용 웹앱, 블루킷",
+      "activities": "가볍게 도입, 깜빡이로 핵심표현 듣고 말하기 연습, 웹앱으로 표현 말하기 게임, 블루킷으로 읽기 게임",
+      "feedback": "",
+      "notes": "",
+      "unitId": "0a17ae84-17da-49c8-b1a9-5235d65e0ec0",
+      "sessionId": "3868745c-b0b9-45c2-8041-1aced0580cb6",
+      "createdAt": "2026-10-27T07:06:10.893Z",
+      "updatedAt": "2026-10-28T04:34:16.325Z"
     }
   ],
   "units": [
