@@ -1550,29 +1550,6 @@
       "updatedAt": "2026-10-23T03:07:58.543Z"
     },
     {
-      "id": "d182bf6c-249d-44ce-9d3b-45231ee1f003",
-      "subject": "영어",
-      "date": "2026-10-28",
-      "period": 3,
-      "timetableOrigin": {
-        "slotId": "d8427d21-4947-43cf-97f2-ec2397f8c4a8",
-        "date": "2026-10-28"
-      },
-      "title": "영어 수업",
-      "grade": 6,
-      "classroom": "1",
-      "status": "계획 중",
-      "objective": "",
-      "materials": "",
-      "activities": "",
-      "feedback": "",
-      "notes": "",
-      "unitId": null,
-      "sessionId": null,
-      "createdAt": "2026-10-22T23:48:27.301Z",
-      "updatedAt": "2026-10-22T23:48:27.301Z"
-    },
-    {
       "id": "4bcbe330-093c-46d1-bb0c-0cdf1f54d21d",
       "subject": "영어",
       "date": "2026-10-28",
@@ -1858,6 +1835,29 @@
       "sessionId": "3868745c-b0b9-45c2-8041-1aced0580cb6",
       "createdAt": "2026-10-27T07:06:10.893Z",
       "updatedAt": "2026-10-27T07:06:22.122Z"
+    },
+    {
+      "id": "d182bf6c-249d-44ce-9d3b-45231ee1f003",
+      "subject": "영어",
+      "date": "2026-10-28",
+      "period": 5,
+      "timetableOrigin": {
+        "slotId": "d8427d21-4947-43cf-97f2-ec2397f8c4a8",
+        "date": "2026-10-28"
+      },
+      "title": "영어 수업",
+      "grade": 6,
+      "classroom": "1",
+      "status": "수업 완료",
+      "objective": "핵심 표현 연습하기, 내가 원하는 여행지에 도달하는 방법 찾기",
+      "materials": "PPT, 블루킷, 패들렛",
+      "activities": "가고싶은 여행지 - 여행지 주변의 큰 도시 혹은 수도로 가는 항공편/티켓 가격 책정",
+      "feedback": "디게 어려워하네 이런걸",
+      "notes": "",
+      "unitId": "7cde333c-c57c-4679-841b-b943c7326aa5",
+      "sessionId": "a7ff6374-10e2-4465-8b06-ad045f4ef017",
+      "createdAt": "2026-10-22T23:48:27.301Z",
+      "updatedAt": "2026-10-28T04:31:18.154Z"
     }
   ],
   "units": [
