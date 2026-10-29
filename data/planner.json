@@ -1550,29 +1550,6 @@
       "updatedAt": "2026-10-23T03:07:58.543Z"
     },
     {
-      "id": "a53e06d1-b474-4ae9-9014-bfcad8acaa85",
-      "subject": "영어",
-      "date": "2026-10-30",
-      "period": 4,
-      "timetableOrigin": {
-        "slotId": "eaf98981-94ac-440d-ad7d-e3d60f2bb3ce",
-        "date": "2026-10-30"
-      },
-      "title": "영어 수업",
-      "grade": 6,
-      "classroom": "2",
-      "status": "계획 중",
-      "objective": "",
-      "materials": "",
-      "activities": "",
-      "feedback": "",
-      "notes": "",
-      "unitId": null,
-      "sessionId": null,
-      "createdAt": "2026-10-22T23:48:27.301Z",
-      "updatedAt": "2026-10-22T23:48:27.301Z"
-    },
-    {
       "id": "e31c28c4-4baf-4094-8c9c-a63faa3e5ca0",
       "subject": "영어",
       "date": "2026-10-27",
@@ -1850,6 +1827,29 @@
       "sessionId": null,
       "createdAt": "2026-10-22T23:48:27.301Z",
       "updatedAt": "2026-10-29T23:29:19.915Z"
+    },
+    {
+      "id": "a53e06d1-b474-4ae9-9014-bfcad8acaa85",
+      "subject": "영어",
+      "date": "2026-10-30",
+      "period": 4,
+      "timetableOrigin": {
+        "slotId": "eaf98981-94ac-440d-ad7d-e3d60f2bb3ce",
+        "date": "2026-10-30"
+      },
+      "title": "영어 수업",
+      "grade": 6,
+      "classroom": "2",
+      "status": "준비 완료",
+      "objective": "할로윈에 대해서 알아보자 + 핵심표현",
+      "materials": "",
+      "activities": "",
+      "feedback": "",
+      "notes": "",
+      "unitId": null,
+      "sessionId": null,
+      "createdAt": "2026-10-22T23:48:27.301Z",
+      "updatedAt": "2026-10-29T23:29:27.043Z"
     }
   ],
   "units": [
