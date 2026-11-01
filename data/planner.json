@@ -2174,29 +2174,6 @@
       "updatedAt": "2026-11-01T23:48:02.192Z"
     },
     {
-      "id": "2e2c0cbe-63c2-4c3e-8e14-d9c1b7c98f1e",
-      "subject": "영어",
-      "date": "2026-11-02",
-      "period": 2,
-      "timetableOrigin": {
-        "slotId": "77eeef2d-9c12-47cc-8c3b-f40783fa311e",
-        "date": "2026-11-02"
-      },
-      "title": "영어 수업",
-      "grade": 6,
-      "classroom": "1",
-      "status": "준비 완료",
-      "objective": "테리 없어서 오늘은 할로윈 영화보기",
-      "materials": "",
-      "activities": "",
-      "feedback": "",
-      "notes": "",
-      "unitId": null,
-      "sessionId": null,
-      "createdAt": "2026-11-01T23:48:02.191Z",
-      "updatedAt": "2026-11-01T23:48:29.333Z"
-    },
-    {
       "id": "fd9b7864-485d-4a48-ba5f-de6eaba04870",
       "subject": "영어",
       "date": "2026-11-02",
@@ -2218,6 +2195,29 @@
       "sessionId": null,
       "createdAt": "2026-11-01T23:48:02.191Z",
       "updatedAt": "2026-11-01T23:49:49.858Z"
+    },
+    {
+      "id": "2e2c0cbe-63c2-4c3e-8e14-d9c1b7c98f1e",
+      "subject": "영어",
+      "date": "2026-11-02",
+      "period": 2,
+      "timetableOrigin": {
+        "slotId": "77eeef2d-9c12-47cc-8c3b-f40783fa311e",
+        "date": "2026-11-02"
+      },
+      "title": "영어 수업",
+      "grade": 6,
+      "classroom": "1",
+      "status": "수업 완료",
+      "objective": "테리 없어서 오늘은 할로윈 영화보기",
+      "materials": "",
+      "activities": "",
+      "feedback": "",
+      "notes": "",
+      "unitId": null,
+      "sessionId": null,
+      "createdAt": "2026-11-01T23:48:02.191Z",
+      "updatedAt": "2026-11-01T23:50:01.346Z"
     }
   ],
   "units": [
