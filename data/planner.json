@@ -2218,6 +2218,25 @@
       "sessionId": "e53ac2a9-3bb3-4c00-b7b8-160bf12271ec",
       "createdAt": "2026-11-01T23:48:02.191Z",
       "updatedAt": "2026-11-02T23:26:10.968Z"
+    },
+    {
+      "id": "691f3cfa-e3e4-454b-9ea6-f4fe3661bc86",
+      "subject": "영어",
+      "date": "2026-11-03",
+      "period": 2,
+      "title": "영어 수업",
+      "grade": 3,
+      "classroom": "4",
+      "status": "계획 중",
+      "objective": "I'm happy 공개수업 차시, 감정 이모티콘 카드 만들어서 친구들과 공유하기",
+      "materials": "PPT, 감정 이모티콘 카드, 블루킷",
+      "activities": "감정 이모티콘 카드 제작 - 모둠 공유 - 전체 공유",
+      "feedback": "",
+      "notes": "",
+      "unitId": "0a17ae84-17da-49c8-b1a9-5235d65e0ec0",
+      "sessionId": "e53ac2a9-3bb3-4c00-b7b8-160bf12271ec",
+      "createdAt": "2026-11-02T23:26:20.623Z",
+      "updatedAt": "2026-11-02T23:26:25.640Z"
     }
   ],
   "units": [
