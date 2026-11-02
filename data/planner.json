@@ -1852,29 +1852,6 @@
       "updatedAt": "2026-10-29T23:29:27.043Z"
     },
     {
-      "id": "894163dd-166a-412b-9ea9-35a594e245cf",
-      "subject": "영어",
-      "date": "2026-11-03",
-      "period": 1,
-      "timetableOrigin": {
-        "slotId": "84e428c2-f544-4131-8dc0-34db4f3efb33",
-        "date": "2026-11-03"
-      },
-      "title": "영어 수업",
-      "grade": 3,
-      "classroom": "5",
-      "status": "계획 중",
-      "objective": "",
-      "materials": "",
-      "activities": "",
-      "feedback": "",
-      "notes": "",
-      "unitId": null,
-      "sessionId": null,
-      "createdAt": "2026-11-01T23:48:02.191Z",
-      "updatedAt": "2026-11-01T23:48:02.191Z"
-    },
-    {
       "id": "ae41ebab-6d98-4058-afd2-0eefdd220d06",
       "subject": "영어",
       "date": "2026-11-03",
@@ -2218,6 +2195,29 @@
       "sessionId": null,
       "createdAt": "2026-11-01T23:48:02.191Z",
       "updatedAt": "2026-11-01T23:50:01.346Z"
+    },
+    {
+      "id": "894163dd-166a-412b-9ea9-35a594e245cf",
+      "subject": "영어",
+      "date": "2026-11-03",
+      "period": 1,
+      "timetableOrigin": {
+        "slotId": "84e428c2-f544-4131-8dc0-34db4f3efb33",
+        "date": "2026-11-03"
+      },
+      "title": "영어 수업",
+      "grade": 3,
+      "classroom": "5",
+      "status": "준비 완료",
+      "objective": "I'm happy 공개수업 차시, 감정 이모티콘 카드 만들어서 친구들과 공유하기",
+      "materials": "PPT, 감정 이모티콘 카드, 블루킷",
+      "activities": "감정 이모티콘 카드 제작 - 모둠 공유 - 전체 공유",
+      "feedback": "",
+      "notes": "",
+      "unitId": "0a17ae84-17da-49c8-b1a9-5235d65e0ec0",
+      "sessionId": "e53ac2a9-3bb3-4c00-b7b8-160bf12271ec",
+      "createdAt": "2026-11-01T23:48:02.191Z",
+      "updatedAt": "2026-11-02T23:26:10.968Z"
     }
   ],
   "units": [
