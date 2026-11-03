@@ -63,14 +63,20 @@ import {
 } from "./school-events";
 import { eventsFor } from "@/lib/school";
 import { mondayOf, weekCandidates, lessonsFromWeek } from "@/lib/timetable";
+import TeachingLibrary, { type Reuse } from "./teaching-library";
+import { sourceReference } from "@/lib/library-model";
+import { loadPlanner } from "@/lib/cloud-client";
+import { plannerChanges } from "@/lib/planner-sync";
+import { lessonItem, unitItem } from "@/lib/library-items";
 
-type View = "today" | "calendar" | "board" | "plans" | "timetable";
+type View = "today" | "calendar" | "board" | "plans" | "timetable" | "library";
 const viewLabels: Record<View, string> = {
   today: "오늘의 수업",
   calendar: "수업 달력",
   board: "준비상태 보드",
   plans: "수업·단원 계획",
   timetable: "학교·기초시간표",
+  library: "수업 자료실",
 };
 type Editor =
   | { kind: "lesson"; value: Lesson; fresh: boolean }
@@ -135,15 +141,13 @@ export default function PlannerApp({
   const [conflict, setConflict] = useState(false);
   const dialog = useRef<HTMLDialogElement>(null);
   const saving = useRef(false);
+  const [libraryDirty, setLibraryDirty] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const response = await fetch("/api/planner", { cache: "no-store" });
-      const body = await response.json();
-      if (!response.ok) throw new Error(body.error);
-      setSnapshot({ data: plannerSchema.parse(body.data), sha: body.sha });
+      setSnapshot(await loadPlanner());
       setConflict(false);
     } catch (e) {
       setError(e instanceof Error ? e.message : "불러오지 못했습니다.");
@@ -152,6 +156,8 @@ export default function PlannerApp({
     }
   }, []);
   useEffect(() => {
+    if (new URLSearchParams(window.location.search).has("libraryId"))
+      setView("library");
     void load();
   }, [load]);
   useEffect(() => {
@@ -164,11 +170,12 @@ export default function PlannerApp({
   }, [editor]);
   useEffect(() => {
     const handler = (e: BeforeUnloadEvent) => {
-      if (dirty || hasQuickDrafts || slotDraft || busy) e.preventDefault();
+      if (dirty || hasQuickDrafts || slotDraft || busy || libraryDirty)
+        e.preventDefault();
     };
     window.addEventListener("beforeunload", handler);
     return () => window.removeEventListener("beforeunload", handler);
-  }, [dirty, hasQuickDrafts, slotDraft, busy]);
+  }, [dirty, hasQuickDrafts, slotDraft, busy, libraryDirty]);
 
   async function save(data: Planner): Promise<boolean> {
     if (!snapshot || saving.current || conflict) return false;
@@ -183,17 +190,34 @@ export default function PlannerApp({
     setNotice("");
     try {
       const response = await fetch("/api/planner", {
-        method: "PUT",
+        method: snapshot.backend === "database" ? "PATCH" : "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ data: checked.data, sha: snapshot.sha }),
+        body: JSON.stringify(
+          snapshot.backend === "database"
+            ? {
+                changes: plannerChanges(snapshot.data, checked.data),
+                sha: snapshot.sha,
+              }
+            : { data: checked.data, sha: snapshot.sha },
+        ),
       });
       const body = await response.json();
       if (!response.ok) {
         if (response.status === 409) setConflict(true);
         throw new Error(body.error);
       }
-      setSnapshot({ data: plannerSchema.parse(body.data), sha: body.sha });
-      setNotice(demo ? "로컬 데모에 저장했습니다." : "GitHub에 저장했습니다.");
+      setSnapshot({
+        data: body.data ? plannerSchema.parse(body.data) : checked.data,
+        sha: body.sha,
+        backend: snapshot.backend,
+      });
+      setNotice(
+        demo
+          ? "로컬 데모에 저장했습니다."
+          : snapshot.backend === "database"
+            ? "클라우드 DB에 저장했습니다."
+            : "GitHub에 저장했습니다.",
+      );
       return true;
     } catch (e) {
       setError(
@@ -206,6 +230,95 @@ export default function PlannerApp({
       saving.current = false;
       setBusy(false);
     }
+  }
+  async function reuseLibrary(request: Reuse): Promise<boolean> {
+    if (!snapshot) return false;
+    const { item, excerpt, mode } = request;
+    const reference = sourceReference(item, excerpt, mode);
+    if (mode === "adapt" && !request.date) {
+      const now = new Date().toISOString();
+      const classification = {
+        ...item.classification,
+        materialStatus: "수정 중 초안",
+        standards: item.classification.standards.map((s) => ({
+          ...s,
+          alignment: "재검토",
+        })),
+        favorite: false,
+      };
+      const resource = {
+        id: crypto.randomUUID(),
+        title: `${item.title} · 재구성`,
+        type: "초안",
+        content: excerpt,
+        links: [],
+        classification,
+        references: [reference],
+        createdAt: now,
+        updatedAt: now,
+      };
+      const response = await fetch("/api/library", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          id: resource.id,
+          version: "",
+          classification,
+          resource,
+        }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error);
+      return true;
+    }
+    if (mode === "adapt") {
+      const lesson = {
+        ...newLesson(request.date!),
+        title: item.title,
+        subject: item.subject || "교과 미정",
+        grade: request.grade!,
+        classroom: request.classroom!,
+        activities: excerpt,
+        references: [reference],
+      };
+      return save({
+        ...snapshot.data,
+        lessons: [...snapshot.data.lessons, lesson],
+      });
+    }
+    const target = snapshot.data.lessons.find((l) => l.id === request.targetId);
+    if (!target)
+      throw new Error(
+        "선택한 수업을 찾을 수 없습니다. 최신 내용을 불러와 주세요.",
+      );
+    if (
+      target.references?.some(
+        (r) =>
+          r.sourceId === reference.sourceId &&
+          r.version === reference.version &&
+          r.excerpt === reference.excerpt &&
+          r.mode === reference.mode,
+      )
+    )
+      throw new Error("동일한 자료와 내용이 이미 연결되어 있습니다.");
+    return save({
+      ...snapshot.data,
+      lessons: snapshot.data.lessons.map((l) =>
+        l.id === target.id
+          ? {
+              ...l,
+              activities:
+                mode === "excerpt"
+                  ? [l.activities, `[가져온 활동: ${item.title}]\n${excerpt}`]
+                      .filter(Boolean)
+                      .join("\n\n")
+                  : l.activities,
+              references: [...(l.references || []), reference],
+              updatedAt: new Date().toISOString(),
+            }
+          : l,
+      ),
+    });
   }
   function open(next: Editor) {
     setEditor(next);
@@ -437,7 +550,7 @@ export default function PlannerApp({
         (!grade || String(l.grade) === grade) &&
         (!classroom || l.classroom === classroom) &&
         (!search ||
-          `${l.title} ${l.objective} ${l.activities}`
+          `${l.title} ${lessonItem(l, "").content}`
             .toLowerCase()
             .includes(search.toLowerCase())),
     )
@@ -456,7 +569,10 @@ export default function PlannerApp({
     (u) =>
       (!subject || u.subject === subject) &&
       (!grade || String(u.grade) === grade) &&
-      (!search || u.title.toLowerCase().includes(search.toLowerCase())),
+      (!search ||
+        `${u.title} ${unitItem(u, "").content}`
+          .toLowerCase()
+          .includes(search.toLowerCase())),
   );
   const monthStart = anchor.slice(0, 7) + "-01";
   const start =
@@ -538,6 +654,7 @@ export default function PlannerApp({
               { id: "calendar", label: "수업 달력", icon: CalendarDays },
               { id: "board", label: "준비상태 보드", icon: Columns3 },
               { id: "plans", label: "수업·단원 계획", icon: ListChecks },
+              { id: "library", label: "수업 자료실", icon: BookOpen },
               { id: "timetable", label: "학교·기초시간표", icon: Settings2 },
             ] as const
           ).map((item) => (
@@ -545,7 +662,14 @@ export default function PlannerApp({
               key={item.id}
               className={view === item.id ? "nav-item active" : "nav-item"}
               aria-current={view === item.id ? "page" : undefined}
-              onClick={() => setView(item.id)}
+              onClick={() => {
+                if (
+                  view !== "library" ||
+                  !libraryDirty ||
+                  confirm("저장하지 않은 자료 편집을 닫을까요?")
+                )
+                  setView(item.id);
+              }}
             >
               <item.icon size={19} />
               {item.label}
@@ -606,15 +730,17 @@ export default function PlannerApp({
                 <span className="heading-dot">.</span>
               </h1>
               <p>
-                {view === "timetable"
-                  ? "학교 일정을 확인하고, 기초시간표로 한 주의 수업을 준비하세요."
-                  : view === "today"
-                    ? "오늘 필요한 준비와 지난 메모를 살펴보고, 수업 후 짧게 기록하세요."
-                    : view === "calendar"
-                      ? "다가올 수업을 살펴보고, 나만의 속도로 준비해 보세요."
-                      : view === "board"
-                        ? "생각에서 준비로, 준비에서 수업으로. 한 걸음씩 이어가세요."
-                        : "단원의 큰 그림을 그리고, 한 차시씩 구체화해 보세요."}
+                {view === "library"
+                  ? "쌓아 둔 기록을 찾고, 필요한 부분을 다음 수업으로 이어가세요."
+                  : view === "timetable"
+                    ? "학교 일정을 확인하고, 기초시간표로 한 주의 수업을 준비하세요."
+                    : view === "today"
+                      ? "오늘 필요한 준비와 지난 메모를 살펴보고, 수업 후 짧게 기록하세요."
+                      : view === "calendar"
+                        ? "다가올 수업을 살펴보고, 나만의 속도로 준비해 보세요."
+                        : view === "board"
+                          ? "생각에서 준비로, 준비에서 수업으로. 한 걸음씩 이어가세요."
+                          : "단원의 큰 그림을 그리고, 한 차시씩 구체화해 보세요."}
               </p>
             </div>
             <button
@@ -625,7 +751,7 @@ export default function PlannerApp({
               <Plus size={18} /> 수업 계획 추가
             </button>
           </div>
-          {view !== "timetable" && (
+          {view !== "timetable" && view !== "library" && (
             <>
               <section className="stats" aria-label="수업 현황">
                 <Stat
@@ -799,6 +925,14 @@ export default function PlannerApp({
                   sync={schoolSync}
                   visible={showSchoolEvents}
                   onToggle={() => setShowSchoolEvents((value) => !value)}
+                />
+              )}
+              {view === "library" && (
+                <TeachingLibrary
+                  lessons={snapshot.data.lessons}
+                  onReuse={reuseLibrary}
+                  onDirty={setLibraryDirty}
+                  backend={snapshot.backend}
                 />
               )}
               {view === "timetable" && (
@@ -1260,7 +1394,14 @@ export default function PlannerApp({
             </>
           )}
           <footer className="workspace-footer">
-            <span>수업의 결 · 선생님의 하루를 위한 작은 도구</span>
+            <span>
+              수업의 결 ·{" "}
+              {snapshot?.backend === "database"
+                ? "클라우드 DB 저장"
+                : demo
+                  ? "로컬 데모"
+                  : "GitHub 저장"}
+            </span>
             <button
               disabled={!snapshot}
               onClick={() =>
@@ -1693,6 +1834,40 @@ export default function PlannerApp({
                       />
                     </>
                   )}
+                  {lesson &&
+                    lesson.references &&
+                    lesson.references.length > 0 && (
+                      <details className="wide">
+                        <summary>
+                          참고·가져온 자료 ({lesson.references.length})
+                        </summary>
+                        {lesson.references.map((r, i) => (
+                          <div key={i}>
+                            <a
+                              href={`/?libraryId=${r.sourceId}&version=${r.version}`}
+                              target="_blank"
+                              rel="noreferrer"
+                            >
+                              {r.title} · 참조 당시 원문
+                            </a>
+                            <pre className="library-content">{r.excerpt}</pre>
+                            <button
+                              type="button"
+                              className="button"
+                              onClick={() =>
+                                editLesson({
+                                  references: lesson.references!.filter(
+                                    (_, j) => j !== i,
+                                  ),
+                                })
+                              }
+                            >
+                              이 참조 연결 해제
+                            </button>
+                          </div>
+                        ))}
+                      </details>
+                    )}
                   <div className="recorded wide">
                     기록한 날짜{" "}
                     {new Intl.DateTimeFormat("ko-KR", {

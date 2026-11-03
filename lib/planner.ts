@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { referenceSchema } from "./library-model";
 
 export const SUBJECTS = [
   "국어",
@@ -126,6 +127,7 @@ export const lessonSchema = z
     activities: note,
     feedback: note,
     notes: note,
+    references: z.array(referenceSchema).max(100).optional(),
     unitId: id.nullable(),
     sessionId: id.nullable(),
     createdAt: timestamp,
@@ -152,8 +154,8 @@ export const unitSchema = z
 export const plannerSchema = z
   .object({
     schemaVersion: z.literal(1),
-    lessons: z.array(lessonSchema).max(10000),
-    units: z.array(unitSchema).max(1000),
+    lessons: z.array(lessonSchema),
+    units: z.array(unitSchema),
     timetable: timetableSchema.optional(),
   })
   .strict()
@@ -199,7 +201,11 @@ export const plannerSchema = z
 export type Lesson = z.infer<typeof lessonSchema>;
 export type Unit = z.infer<typeof unitSchema>;
 export type Planner = z.infer<typeof plannerSchema>;
-export type Snapshot = { data: Planner; sha: string };
+export type Snapshot = {
+  data: Planner;
+  sha: string;
+  backend?: "database" | "github" | "demo";
+};
 export const EMPTY_PLANNER: Planner = {
   schemaVersion: 1,
   lessons: [],
