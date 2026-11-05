@@ -2390,3 +2390,101 @@ td {
   color: var(--muted);
   font-size: var(--text-xs);
 }
+
+/* Calendar quick actions: sibling buttons keep card controls accessible. */
+.calendar-event-wrap {
+  position: relative;
+}
+.calendar-event-wrap .event-meta {
+  padding-right: 28px;
+  min-height: 24px;
+}
+.day-actions {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.calendar-more {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 28px;
+  height: 28px;
+  padding: 3px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  color: var(--accent);
+  background: var(--surface);
+}
+.calendar-more:hover,
+.calendar-more:focus-visible {
+  background: var(--accent-soft);
+  border-color: var(--accent);
+}
+.lesson-more {
+  position: absolute;
+  right: 3px;
+  top: 4px;
+}
+.calendar-context-menu {
+  position: fixed;
+  z-index: 100;
+  width: 240px;
+  max-width: calc(100vw - 16px);
+  max-height: calc(100dvh - 16px);
+  overflow-y: auto;
+  padding: 6px;
+  background: var(--raised);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-shadow: 0 12px 36px #0008;
+}
+.calendar-context-menu button {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  width: 100%;
+  padding: 11px 12px;
+  border: 0;
+  border-radius: 6px;
+  text-align: left;
+  font: inherit;
+  font-size: var(--text-sm);
+  color: var(--ink);
+  background: transparent;
+}
+.calendar-context-menu button:hover:not(:disabled),
+.calendar-context-menu button:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+  background: var(--accent-soft);
+}
+.calendar-context-menu button.danger {
+  color: var(--danger);
+}
+.calendar-menu-title,
+.calendar-menu-hint {
+  margin: 4px 8px;
+  font-size: var(--text-xs);
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+.calendar-menu-title {
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line);
+}
+.calendar-undo {
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+@media (pointer: coarse) {
+  .calendar-more {
+    width: 36px;
+    height: 36px;
+  }
+  .calendar-event-wrap .event-meta {
+    padding-right: 36px;
+    min-height: 30px;
+  }
+}

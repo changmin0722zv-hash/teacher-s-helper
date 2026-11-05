@@ -275,3 +275,72 @@ test("library searches unit notes in SQL, paginates, retains classification and 
     await db.close();
   }
 });
+
+test("undoing a lesson deletion restores classification without rolling back other records", async () => {
+  const { db, query } = await database();
+  try {
+    await migrateCloud(query, github());
+    const original = await readCloud(query),
+      lesson = original.data.lessons[0];
+    const [row] = await query(
+      "SELECT version FROM teaching_records WHERE id=$1",
+      [lesson.id],
+    );
+    const meta = {
+      ...emptyClassification(),
+      topics: ["되살릴 분류"],
+      favorite: true,
+    };
+    await query(
+      "SELECT teaching_save_item($1,$2,$3,$4::jsonb,$5::jsonb,false)",
+      [
+        lesson.id,
+        row.version,
+        revision(),
+        "{}",
+        JSON.stringify({ classification: meta }),
+      ],
+    );
+    const deleted = await saveCloud(
+      { ...original.data, lessons: [] },
+      original.sha,
+      query,
+    );
+    const unrelated = await saveCloud(
+      {
+        ...deleted.data,
+        units: deleted.data.units.map((u) => ({
+          ...u,
+          notes: "삭제 후 별도로 수정",
+        })),
+      },
+      deleted.sha,
+      query,
+    );
+    await saveCloud(
+      { ...unrelated.data, lessons: [lesson] },
+      unrelated.sha,
+      query,
+    );
+    const restored = await readCloud(query);
+    assert.deepEqual(restored.data.lessons[0], lesson);
+    assert.equal(restored.data.units[0].notes, "삭제 후 별도로 수정");
+    const [item] = await query(
+      "SELECT document FROM teaching_records WHERE id=$1",
+      [lesson.id],
+    );
+    assert.deepEqual((item.document as any).classification, meta);
+    assert.equal(
+      (
+        await searchDatabase(
+          query,
+          { ...emptyFilters(), tag: "되살릴 분류" },
+          0,
+        )
+      ).total,
+      1,
+    );
+  } finally {
+    await db.close();
+  }
+});

@@ -38,7 +38,7 @@ export const DB_STATEMENTS = [
   `CREATE TABLE IF NOT EXISTS teaching_searches (id uuid PRIMARY KEY, payload jsonb NOT NULL)`,
   `CREATE OR REPLACE FUNCTION teaching_save_records(p_expected text,p_next text,p_rows jsonb,p_remove jsonb,p_activate boolean DEFAULT false)
  RETURNS text LANGUAGE plpgsql AS $fn$
- DECLARE state teaching_state%ROWTYPE; r jsonb; old teaching_records%ROWTYPE; doc jsonb;
+ DECLARE state teaching_state%ROWTYPE; r jsonb; old teaching_records%ROWTYPE; doc jsonb; previous jsonb;
  BEGIN
   SELECT * INTO state FROM teaching_state WHERE id FOR UPDATE;
   IF state.revision IS DISTINCT FROM p_expected THEN RAISE EXCEPTION 'TEACHING_CONFLICT'; END IF;
@@ -49,6 +49,13 @@ export const DB_STATEMENTS = [
    IF old.id IS NOT NULL AND old.kind<>r->>'kind' THEN RAISE EXCEPTION 'TEACHING_CONFLICT'; END IF;
    doc := r->'document';
    IF old.id IS NOT NULL AND old.document ? 'classification' THEN doc := jsonb_set(doc,'{classification}',old.document->'classification'); END IF;
+   IF old.id IS NULL AND r->>'kind' IN ('lesson','unit') THEN
+    SELECT document INTO previous FROM teaching_versions WHERE record_id=(r->>'id')::uuid
+     ORDER BY created_at DESC,version DESC LIMIT 1;
+    IF previous ? 'classification' AND previous->>'kind'=r->>'kind' THEN
+     doc := jsonb_set(doc,'{classification}',previous->'classification');
+    END IF;
+   END IF;
    INSERT INTO teaching_records(id,kind,payload,document,version,search_text)
    VALUES ((r->>'id')::uuid,r->>'kind',r->'payload',doc,p_next,teaching_normalize(doc::text))
    ON CONFLICT(id) DO UPDATE SET payload=EXCLUDED.payload,document=EXCLUDED.document,version=p_next,search_text=EXCLUDED.search_text,updated_at=now();

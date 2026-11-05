@@ -29,6 +29,7 @@ import {
   LogOut,
   Layers3,
   Settings2,
+  MoreHorizontal,
 } from "lucide-react";
 import {
   copyLesson,
@@ -68,6 +69,11 @@ import { sourceReference } from "@/lib/library-model";
 import { loadPlanner } from "@/lib/cloud-client";
 import { plannerChanges } from "@/lib/planner-sync";
 import { lessonItem, unitItem } from "@/lib/library-items";
+
+import CalendarMenu, {
+  type CalendarMenuTarget,
+  type CalendarAction,
+} from "./calendar-menu";
 
 type View = "today" | "calendar" | "board" | "plans" | "timetable" | "library";
 const viewLabels: Record<View, string> = {
@@ -142,6 +148,37 @@ export default function PlannerApp({
   const dialog = useRef<HTMLDialogElement>(null);
   const saving = useRef(false);
   const [libraryDirty, setLibraryDirty] = useState(false);
+  const [calendarMenu, setCalendarMenu] = useState<CalendarMenuTarget | null>(
+    null,
+  );
+  const [copiedLesson, setCopiedLesson] = useState<Lesson | null>(null);
+  const [deletedLesson, setDeletedLesson] = useState<{
+    lesson: Lesson;
+    expires: number;
+  } | null>(null);
+  const closeCalendarMenu = useCallback(() => setCalendarMenu(null), []);
+  useEffect(() => {
+    setCalendarMenu(null);
+  }, [
+    view,
+    anchor,
+    calendarMode,
+    subject,
+    grade,
+    classroom,
+    search,
+    snapshot,
+    busy,
+    loading,
+  ]);
+  useEffect(() => {
+    if (!deletedLesson) return;
+    const timer = setTimeout(
+      () => setDeletedLesson(null),
+      Math.max(0, deletedLesson.expires - Date.now()),
+    );
+    return () => clearTimeout(timer);
+  }, [deletedLesson]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -411,6 +448,102 @@ export default function PlannerApp({
       setEditor(null);
       setDirty(false);
     }
+  }
+  function showCalendarMenu(
+    e: React.MouseEvent<HTMLElement>,
+    date: string,
+    lessonId?: string,
+    fromButton = false,
+  ) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (busy || loading || conflict || !snapshot) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    setCalendarMenu({
+      date,
+      lessonId,
+      trigger: !fromButton
+        ? e.currentTarget.querySelector<HTMLButtonElement>(".calendar-event") ||
+          e.currentTarget
+        : e.currentTarget,
+      x: fromButton ? rect.left : e.clientX,
+      y: fromButton ? rect.bottom : e.clientY,
+    });
+  }
+  async function deleteCalendarLesson(lesson: Lesson) {
+    if (!snapshot || busy || conflict) return;
+    const draft = quickDrafts[lesson.id];
+    if (draft?.note || draft?.preparation) {
+      setError(
+        "이 수업에 저장하지 않은 빠른 기록이 있습니다. 오늘의 수업에서 먼저 저장하거나 비워 주세요.",
+      );
+      return;
+    }
+    if (
+      !confirm(
+        `${lesson.date} · ${lesson.grade}학년 ${lesson.classroom}반${lesson.period ? ` · ${lesson.period}교시` : ""}\n${lesson.title}\n이 수업을 삭제할까요?`,
+      )
+    )
+      return;
+    if (
+      await save({
+        ...snapshot.data,
+        lessons: snapshot.data.lessons.filter((l) => l.id !== lesson.id),
+      })
+    ) {
+      setDeletedLesson({ lesson, expires: Date.now() + 15000 });
+    }
+  }
+  async function undoCalendarDelete() {
+    if (
+      !snapshot ||
+      !deletedLesson ||
+      busy ||
+      conflict ||
+      Date.now() >= deletedLesson.expires
+    )
+      return;
+    const { lesson } = deletedLesson;
+    if (snapshot.data.lessons.some((l) => l.id === lesson.id)) {
+      setDeletedLesson(null);
+      return;
+    }
+    if (
+      await save({
+        ...snapshot.data,
+        lessons: [...snapshot.data.lessons, lesson],
+      })
+    )
+      setDeletedLesson(null);
+  }
+  function calendarAction(action: CalendarAction) {
+    if (!calendarMenu || !snapshot || busy || conflict) return;
+    const lesson = snapshot.data.lessons.find(
+      (l) => l.id === calendarMenu.lessonId,
+    );
+    if (action === "add") beginLesson(calendarMenu.date);
+    if (action === "edit" && lesson)
+      open({ kind: "lesson", value: lesson, fresh: false });
+    if (action === "copy" && lesson) {
+      setCopiedLesson(structuredClone(lesson));
+      setNotice(
+        `‘${lesson.title}’ 복사됨 · 원하는 날짜에서 붙여넣기를 선택하세요. 새로고침하면 복사 내용은 비워집니다.`,
+      );
+    }
+    if (action === "paste" && copiedLesson) {
+      const value = copyLesson(copiedLesson);
+      value.date = calendarMenu.date;
+      // A copied plan may outlive a deleted unit or session in this tab.
+      const unit = snapshot.data.units.find((u) => u.id === value.unitId);
+      if (!unit) {
+        value.unitId = null;
+        value.sessionId = null;
+      } else if (!unit.sessions.some((s) => s.id === value.sessionId))
+        value.sessionId = null;
+      open({ kind: "lesson", value, fresh: true });
+      setDirty(true);
+    }
+    if (action === "delete" && lesson) void deleteCalendarLesson(lesson);
   }
   async function changeStatus(id: string, status: Lesson["status"]) {
     if (!snapshot || busy || conflict) return;
@@ -901,6 +1034,21 @@ export default function PlannerApp({
             </div>
           )}
           {!editor && errorBox}
+          {deletedLesson && (
+            <div className="notice calendar-undo" role="status">
+              <span>
+                ‘{deletedLesson.lesson.title}’ 삭제됨 · 15초 동안 되돌릴 수
+                있어요.
+              </span>
+              <button
+                className="button"
+                disabled={busy || conflict || loading}
+                onClick={() => void undoCalendarDelete()}
+              >
+                삭제 실행 취소
+              </button>
+            </div>
+          )}
           {notice && (
             <div className="notice" role="status">
               <Check size={15} />
@@ -1072,6 +1220,8 @@ export default function PlannerApp({
                     {calendarDates.map((date, idx) => (
                       <div
                         key={date}
+                        data-date={date}
+                        onContextMenu={(e) => showCalendarMenu(e, date)}
                         className={`day-cell ${date.slice(0, 7) !== anchor.slice(0, 7) ? "outside" : ""} ${date === today ? "is-today" : ""}`}
                       >
                         <div className="day-heading">
@@ -1080,14 +1230,31 @@ export default function PlannerApp({
                           >
                             {Number(date.slice(8))}
                           </span>
-                          <button
-                            className="add-day"
-                            disabled={busy}
-                            aria-label={`${date} 수업 추가`}
-                            onClick={() => beginLesson(date)}
-                          >
-                            <Plus size={14} />
-                          </button>
+                          <div className="day-actions">
+                            <button
+                              className="calendar-more"
+                              aria-label={`${date} 날짜 메뉴`}
+                              aria-haspopup="menu"
+                              aria-expanded={
+                                calendarMenu?.date === date &&
+                                !calendarMenu.lessonId
+                              }
+                              disabled={busyOrMissing || conflict}
+                              onClick={(e) =>
+                                showCalendarMenu(e, date, undefined, true)
+                              }
+                            >
+                              <MoreHorizontal size={16} />
+                            </button>
+                            <button
+                              className="add-day"
+                              disabled={busy}
+                              aria-label={`${date} 수업 추가`}
+                              onClick={() => beginLesson(date)}
+                            >
+                              <Plus size={14} />
+                            </button>
+                          </div>
                         </div>
                         {showSchoolEvents && (
                           <SchoolEventList
@@ -1101,33 +1268,78 @@ export default function PlannerApp({
                         {lessons
                           .filter((l) => l.date === date)
                           .map((l) => (
-                            <button
+                            <div
+                              className="calendar-event-wrap"
                               key={l.id}
-                              className={`calendar-event ${l.status === "수업 완료" ? "completed" : ""}`}
-                              style={
-                                {
-                                  "--subject-color": color(l.subject),
-                                } as React.CSSProperties
-                              }
-                              onClick={() =>
-                                open({ kind: "lesson", value: l, fresh: false })
+                              onContextMenu={(e) =>
+                                showCalendarMenu(e, date, l.id)
                               }
                             >
-                              <span className="event-meta">
-                                {l.subject} · {l.grade}-{l.classroom}
-                                {l.period ? ` · ${l.period}교시` : ""}
-                                {l.status === "준비 완료" && (
-                                  <Check size={12} />
-                                )}
-                              </span>
-                              <strong>{l.title}</strong>
-                            </button>
+                              <button
+                                className={`calendar-event ${l.status === "수업 완료" ? "completed" : ""}`}
+                                style={
+                                  {
+                                    "--subject-color": color(l.subject),
+                                  } as React.CSSProperties
+                                }
+                                disabled={busyOrMissing}
+                                onKeyDown={(e) => {
+                                  if (
+                                    e.key === "ContextMenu" ||
+                                    (e.shiftKey && e.key === "F10")
+                                  ) {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    if (busyOrMissing || conflict) return;
+                                    const rect =
+                                      e.currentTarget.getBoundingClientRect();
+                                    setCalendarMenu({
+                                      date,
+                                      lessonId: l.id,
+                                      trigger: e.currentTarget,
+                                      x: rect.left,
+                                      y: rect.bottom,
+                                    });
+                                  }
+                                }}
+                                onClick={() =>
+                                  open({
+                                    kind: "lesson",
+                                    value: l,
+                                    fresh: false,
+                                  })
+                                }
+                              >
+                                <span className="event-meta">
+                                  {l.subject} · {l.grade}-{l.classroom}
+                                  {l.period ? ` · ${l.period}교시` : ""}
+                                  {l.status === "준비 완료" && (
+                                    <Check size={12} />
+                                  )}
+                                </span>
+                                <strong>{l.title}</strong>
+                              </button>
+                              <button
+                                className="calendar-more lesson-more"
+                                aria-label={`${l.title} ${l.grade}-${l.classroom} 수업 메뉴`}
+                                aria-haspopup="menu"
+                                aria-expanded={calendarMenu?.lessonId === l.id}
+                                disabled={busyOrMissing || conflict}
+                                onClick={(e) =>
+                                  showCalendarMenu(e, date, l.id, true)
+                                }
+                              >
+                                <MoreHorizontal size={16} />
+                              </button>
+                            </div>
                           ))}
                       </div>
                     ))}
                   </div>
                   <footer className="calendar-footer">
-                    <span>날짜의 + 버튼으로 새로운 수업을 계획하세요.</span>
+                    <span>
+                      수업·날짜를 우클릭하거나 ⋯ 버튼을 눌러 빠르게 정리하세요.
+                    </span>
                     <div>
                       {[...new Set(lessons.map((l) => l.subject))]
                         .slice(0, 7)
@@ -1413,6 +1625,18 @@ export default function PlannerApp({
           </footer>
         </main>
       </div>
+      {calendarMenu && view === "calendar" && !editor && (
+        <CalendarMenu
+          target={calendarMenu}
+          title={
+            snapshot?.data.lessons.find((l) => l.id === calendarMenu.lessonId)
+              ?.title || calendarMenu.date
+          }
+          canPaste={Boolean(copiedLesson)}
+          onClose={closeCalendarMenu}
+          onAction={calendarAction}
+        />
+      )}
       <dialog
         ref={dialog}
         className="editor-dialog"
